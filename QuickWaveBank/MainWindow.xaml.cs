@@ -560,6 +560,7 @@ namespace QuickWaveBank {
 
 			buildStart = DateTime.Now;
 			showingLog = Config.ShowLog;
+			buildCanceled = false;
 			buttonConsole.Content = (Config.ShowLog ? "Hide" : "Show") + " Log";
 			buildProcess.StartInfo.WindowStyle = (Config.ShowLog ? ProcessWindowStyle.Normal : ProcessWindowStyle.Minimized);
 			buildProcess.Start();
@@ -586,33 +587,34 @@ namespace QuickWaveBank {
 			Dispatcher.Invoke(() => {
 				buildingAnimTimer.Stop();
 				if (buildProcess.ExitCode == CancelExitCode) {
-					TriggerMessageBox.Show(this, MessageIcon.Info, "Wave Bank creation canceled.", "Canceled");
+					TriggerMessageBox.Show(this, MessageIcon.Info, "Wave Bank creation canceled.", "Build Canceled");
 				}
 				else if (buildProcess.ExitCode == FailedExitCode) {
 					TriggerMessageBox.Show(this, MessageIcon.Error, "Wave Bank creation failed! See console log for more information.", "Build Failed");
-					if (!showingLog)
-						buildProcess.Show();
 				}
 				else if (!buildCanceled) {
 					bool error = true;
 					try {
-						// Success
-						File.Copy(TempWaveBank, Config.OutputFile, true);
-						File.Delete(TempWaveBank);
-						error = false;
-					}
-					catch (Exception) {
-
-					}
-					if (error) {
-						// Wave Bank not successfully written
-						TriggerMessageBox.Show(this, MessageIcon.Error, "Failed to copy created Wave Bank from temporary directory!", "Copy Failed");
-					}
-					else {
-						var result = TriggerMessageBox.Show(this, MessageIcon.Info, "Wave Bank creation successful! Would you like to open the folder?", "Build Success", MessageBoxButton.YesNo);
-						if (result == MessageBoxResult.Yes) {
-							Process.Start("explorer.exe", "/select, \"" + Config.OutputFile + "\"");
+						if (File.Exists(TempWaveBank) && File.GetLastWriteTime(TempWaveBank) > lastModified) {
+							// Success
+							try {
+								File.Copy(TempWaveBank, Config.OutputFile, true);
+								File.Delete(TempWaveBank);
+								error = false;
+								var result = TriggerMessageBox.Show(this, MessageIcon.Info, "Wave Bank creation successful! Would you like to open the folder?", "Build Success", MessageBoxButton.YesNo);
+								if (result == MessageBoxResult.Yes)
+									Process.Start("explorer.exe", "/select, \"" + Config.OutputFile + "\"");
+							}
+							catch (Exception) {
+								// Wave Bank not successfully written
+								TriggerMessageBox.Show(this, MessageIcon.Error, "Failed to copy created Wave Bank from temporary directory!", "Copy Failed");
+								error = false; // Handled
+							}
 						}
+					}
+					catch (Exception) { }
+					if (error) {
+						TriggerMessageBox.Show(this, MessageIcon.Error, "Wave Bank creation failed! See console log for more information.", "Build Failed");
 					}
 				}
 				gridWindow.IsEnabled = true;

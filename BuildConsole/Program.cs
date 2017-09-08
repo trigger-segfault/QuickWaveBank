@@ -3,10 +3,12 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
-namespace QuickWaveBank {
+namespace BuildConsole {
 	/**<summary>The main program.</summary>*/
 	class Program {
 		//========== CONSTANTS ===========
@@ -33,9 +35,11 @@ namespace QuickWaveBank {
 
 		/**<summary>The entry point of the program.</summary>*/
 		static int Main(string[] args) {
-			Console.Title = "Wave Bank Builder (XactBld3)";
 			Environment.ExitCode = CancelExitCode;
 
+			Console.Title = "Wave Bank Builder (XactBld3)";
+			Console.WriteLine("Building Wave Bank...");
+			
 			DateTime lastModified = (File.Exists(TempWaveBank) ?
 				File.GetLastWriteTime(TempWaveBank) :
 				DateTime.Now
@@ -50,12 +54,19 @@ namespace QuickWaveBank {
 
 			if (process.ExitCode != 0 || !File.Exists(TempWaveBank) || File.GetLastWriteTime(TempWaveBank) <= lastModified) {
 				Environment.ExitCode = FailedExitCode;
+
+				// Sleep now so the window is not hidden afterwards by QuickWaveBanks's hide log.
+				Thread.Sleep(200);
+				// Just in case the window is currently hidden.
+				ShowWindow();
+
 				Console.ForegroundColor = ConsoleColor.Red;
 				Console.WriteLine("Failed to create wave bank!");
 				Console.WriteLine("    See console log for more details.");
 				Console.ForegroundColor = ConsoleColor.Gray;
 				Console.WriteLine();
 				Console.WriteLine("Press any key to close...");
+
 				Console.Read();
 			}
 			else {
@@ -63,6 +74,21 @@ namespace QuickWaveBank {
 			}
 			return Environment.ExitCode;
 		}
+
+		#endregion
+		//========= DLL IMPORTS ==========
+		#region Dll Imports
+
+		private static void ShowWindow() {
+			ShowWindow(GetConsoleWindow(), SW_RESTORE);
+		}
+
+		[DllImport("user32.dll")]
+		private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+		[DllImport("kernel32.dll")]
+		private static extern IntPtr GetConsoleWindow();
+
+		private const int SW_RESTORE = 9;
 
 		#endregion
 	}
