@@ -1,0 +1,229 @@
+﻿<Window x:Class="QuickWaveBank.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:QuickWaveBank"
+        mc:Ignorable="d"
+        Title="Quick Wave Bank" Height="440" Width="400" Background="#FFF0F0F0" Icon="App.ico" Closing="OnWindowClosing" Loaded="OnWindowLoaded" SnapsToDevicePixels="True" UseLayoutRounding="True" MinWidth="380" MinHeight="340" SizeChanged="OnWindowResized">
+    <Window.Resources>
+        <Style TargetType="{x:Type ListView}">
+            <Style.Resources>
+                <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" Color="{x:Static SystemColors.HighlightColor}"/>
+                <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightTextBrushKey}" Color="{x:Static SystemColors.HighlightTextColor}"/>
+            </Style.Resources>
+        </Style>
+        <Style x:Key="FlatButtonImageDisablable" TargetType="{x:Type Image}">
+            <Style.Triggers>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Opacity" Value="0.5" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Resources>
+
+    <Window.CommandBindings>
+        <CommandBinding Command="New" Executed="OnNewWaveList"/>
+        <CommandBinding Command="Open" Executed="OnLoadWaveList"/>
+        <CommandBinding Command="Save" Executed="OnSaveWaveList"/>
+        <CommandBinding Command="local:Commands.MySaveAs" Executed="OnSaveWaveListAs"/>
+
+        <CommandBinding Command="local:Commands.Build" Executed="OnBuild"/>
+
+        <CommandBinding Command="local:Commands.Exit" Executed="OnExit"/>
+    </Window.CommandBindings>
+    <Grid>
+        <DockPanel x:Name="gridWindow" LastChildFill="True" Margin="0">
+            <Menu DockPanel.Dock="Top" x:Name="menu" BorderThickness="0,0,0,1" BorderBrush="#FF919395">
+                <Menu.Background>
+                    <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
+                        <GradientStop Color="#FFECEEF1" Offset="0"/>
+                        <GradientStop Color="#FFD6D9DC" Offset="0.852"/>
+                        <GradientStop Color="#FFE6E8EB" Offset="1"/>
+                    </LinearGradientBrush>
+                </Menu.Background>
+                <MenuItem Header="File">
+                    <MenuItem Header="New Wave List" Command="New">
+                        <MenuItem.Icon>
+                            <Image Source="Resources/Icons/NewWaveList.png"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="Open Wave List" Command="Open">
+                        <MenuItem.Icon>
+                            <Image Source="Resources/Icons/LoadList.png"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="Save Wave List" Command="Save">
+                        <MenuItem.Icon>
+                            <Image Source="Resources/Icons/SaveList.png"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="Save Wave List As" Command="local:Commands.MySaveAs">
+                        <MenuItem.Icon>
+                            <Image Source="Resources/Icons/SaveListAs.png"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <Separator/>
+                    <MenuItem Header="Build Wave Bank" Command="local:Commands.Build">
+                        <MenuItem.Icon>
+                            <Image Source="Resources/Icons/BuildWaveBank.png"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="Extract Wave Bank" Click="OnExtract">
+                        <MenuItem.Icon>
+                            <Image Source="Resources/Icons/ExtractWaveBank.png"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <Separator/>
+                    <MenuItem Header="Exit" Command="local:Commands.Exit">
+                        <MenuItem.Icon>
+                            <Image Source="Resources/Icons/Exit.png"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                </MenuItem>
+                <MenuItem Header="Options">
+                    <MenuItem x:Name="menuItemTrackNames" Header="Track Names" IsCheckable="True" Click="OnTrackNamesChecked">
+                        <MenuItem.Icon>
+                            <Image Source="Resources/Icons/TrackNames.png"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem x:Name="menuItemDragAndDrop" Header="Drag n' Drop" IsCheckable="True" Click="OnDragAndDropChecked">
+                        <MenuItem.Icon>
+                            <Image Source="Resources/Icons/DragAndDrop.png"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem x:Name="menuItemShowLog" Header="Show Log" IsCheckable="True" Click="OnShowLogChecked">
+                        <MenuItem.Icon>
+                            <Image Source="Resources/Icons/ShowLog.png"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem x:Name="menuItemVolume" Header="Volume: 100%" Click="OnChangeVolume">
+                        <MenuItem.Icon>
+                            <Image Source="Resources/Icons/VolumeHigh.png"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <Separator/>
+                    <MenuItem Header="Advanced">
+                        <MenuItem.Icon>
+                            <Image Source="Resources/Icons/Advanced.png"/>
+                        </MenuItem.Icon>
+                        <MenuItem x:Name="menuItemStreaming" Header="Streaming" IsCheckable="True" Click="OnStreamingChecked">
+                            <MenuItem.Icon>
+                                <Image Source="Resources/Icons/Streaming.png"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <MenuItem x:Name="menuItemCompression" Header="Compression: xWMA, 60" Click="OnCompression">
+                            <MenuItem.Icon>
+                                <Image Source="Resources/Icons/Compression.png"/>
+                            </MenuItem.Icon>
+                        </MenuItem>
+                    </MenuItem>
+                </MenuItem>
+                <MenuItem Header="Help">
+                    <MenuItem Header="About" Click="OnAbout">
+                        <MenuItem.Icon>
+                            <Image Source="Resources/Icons/About.png"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="Help" Click="OnHelp">
+                        <MenuItem.Icon>
+                            <Image Source="Resources/Icons/Help.png"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="Credits" Click="OnCredits">
+                        <MenuItem.Icon>
+                            <Image Source="Resources/Icons/Credits.png"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="View on GitHub" Click="OnViewOnGitHub">
+                        <MenuItem.Icon>
+                            <Image Source="Resources/Icons/GitHub.png"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                    <Separator/>
+                    <MenuItem Header="Boss List" Click="OnViewBossList">
+                        <MenuItem.Icon>
+                            <Image Source="Resources/Icons/TerrariaIcon.png"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                </MenuItem>
+            </Menu>
+            <Grid>
+                <Label Content="Output File" HorizontalAlignment="Left" Margin="10,5,0,0" VerticalAlignment="Top" Padding="0,5,5,5"/>
+                <TextBox x:Name="textBoxOutput" Height="23" Margin="10,31,40,0" VerticalAlignment="Top" IsHitTestVisible="True" IsTabStop="False" AllowDrop="True" ScrollViewer.CanContentScroll="True" TextChanged="OnOutputFileChanged"/>
+                <Button HorizontalAlignment="Right" Margin="0,31,10,0" VerticalAlignment="Top" Width="22" Height="22" Padding="0" Grid.IsSharedSizeScope="True" ToolTip="Select Output File" Focusable="False" IsTabStop="False" Click="OnSelectOutputFile">
+                    <Image Height="16" Width="16" Source="Resources/Icons/Browse.png" IsHitTestVisible="False"/>
+                </Button>
+
+                <StackPanel Height="20" Margin="0,60,10,0" VerticalAlignment="Top" HorizontalAlignment="Right" RenderTransformOrigin="0.5,0.5" Orientation="Horizontal" FlowDirection="RightToLeft">
+                    <Button x:Name="buttonMoveWaveDown" Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}" HorizontalAlignment="Left" Margin="0,0,1,0" VerticalAlignment="Top" Width="20" ToolTip="Move Wave Down" Focusable="False" IsTabStop="False" Height="20" Padding="0" Click="OnMoveWaveDown">
+                        <Image Source="Resources/Icons/MoveDown.png" Width="16" Height="16" HorizontalAlignment="Center" VerticalAlignment="Center" Style="{StaticResource FlatButtonImageDisablable}" />
+                    </Button>
+                    <Button x:Name="buttonMoveWaveUp" Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}" HorizontalAlignment="Left" VerticalAlignment="Top" Width="20" ToolTip="Move Wave Up" Focusable="False" IsTabStop="False" Height="20" Padding="0" Margin="1,0" Click="OnMoveWaveUp">
+                        <Image Source="Resources/Icons/MoveUp.png" Width="16" Height="16" HorizontalAlignment="Center" VerticalAlignment="Center" Style="{StaticResource FlatButtonImageDisablable}"/>
+                    </Button>
+                    <Separator Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}" />
+                    <Button x:Name="buttonRemoveWave" Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}" HorizontalAlignment="Left" VerticalAlignment="Top" Width="20" ToolTip="Remove Wave" Focusable="False" IsTabStop="False" Height="20" Click="OnRemoveWave" Padding="0" Margin="1,0">
+                        <Image Source="Resources/Icons/WaveRemove.png" Width="16" Height="16" HorizontalAlignment="Center" VerticalAlignment="Center" Style="{StaticResource FlatButtonImageDisablable}"/>
+                    </Button>
+                    <Button HorizontalAlignment="Left" Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}" VerticalAlignment="Top" Width="20" ToolTip="Add Wave" Focusable="False" IsTabStop="False" Height="20" Click="OnAddWave" Padding="0" Margin="1,0">
+                        <Image Source="Resources/Icons/WaveAdd.png" Width="16" Height="16" HorizontalAlignment="Center" VerticalAlignment="Center" Style="{StaticResource FlatButtonImageDisablable}" />
+                    </Button>
+                    <Separator Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}" />
+                    <Button x:Name="buttonRemoveAllWaves" Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}" HorizontalAlignment="Left" VerticalAlignment="Top" Width="20" ToolTip="Remove all Waves" Focusable="False" IsTabStop="False" Height="20" Padding="0" Margin="1,0" Click="OnRemoveAllWaves" Visibility="Collapsed">
+                        <Image Source="Resources/Icons/WaveRemoveAll.png" Width="16" Height="16" HorizontalAlignment="Center" VerticalAlignment="Center" Style="{StaticResource FlatButtonImageDisablable}"/>
+                    </Button>
+                    <Button Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}" HorizontalAlignment="Left" VerticalAlignment="Top" Width="20" ToolTip="Add Waves from Folder" Focusable="False" IsTabStop="False" Height="20" Padding="0" Margin="1,0" Click="OnAddWaveFolder">
+                        <Image Source="Resources/Icons/WaveAddFolder.png" Width="16" Height="16" HorizontalAlignment="Center" VerticalAlignment="Center" Style="{StaticResource FlatButtonImageDisablable}"/>
+                    </Button>
+                    <Separator Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}" />
+                    <Button x:Name="buttonNext" Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}" HorizontalAlignment="Left" VerticalAlignment="Top" Width="20" ToolTip="Play Next Wave" Focusable="False" IsTabStop="False" Height="20" Padding="0" Margin="1,0" Click="OnNext">
+                        <Image Source="Resources/Icons/Next.png" Width="16" Height="16" HorizontalAlignment="Center" VerticalAlignment="Center" Style="{StaticResource FlatButtonImageDisablable}"/>
+                    </Button>
+                    <ToggleButton x:Name="buttonPause" Style="{StaticResource {x:Static ToolBar.ToggleButtonStyleKey}}" HorizontalAlignment="Left" VerticalAlignment="Top" Width="20" ToolTip="Pause Wave" Focusable="False" IsTabStop="False" Height="20" Padding="0" Margin="1,0" Click="OnPause">
+                        <Image Source="Resources/Icons/Pause.png" Width="16" Height="16" HorizontalAlignment="Center" VerticalAlignment="Center" Style="{StaticResource FlatButtonImageDisablable}"/>
+                    </ToggleButton>
+                    <ToggleButton x:Name="buttonPlay" Style="{StaticResource {x:Static ToolBar.ToggleButtonStyleKey}}" HorizontalAlignment="Left" VerticalAlignment="Top" Width="20" ToolTip="Play Wave" Focusable="False" IsTabStop="False" Height="20" Padding="0" Margin="1,0" Click="OnPlay">
+                        <Image Source="Resources/Icons/Play.png" Width="16" Height="16" HorizontalAlignment="Center" VerticalAlignment="Center" Style="{StaticResource FlatButtonImageDisablable}"/>
+                    </ToggleButton>
+                    <ToggleButton x:Name="buttonStop" Style="{StaticResource {x:Static ToolBar.ToggleButtonStyleKey}}" HorizontalAlignment="Left" VerticalAlignment="Top" Width="20" ToolTip="Stop Wave" Focusable="False" IsTabStop="False" Height="20" Padding="0" Margin="1,0" Click="OnStop" IsChecked="True">
+                        <Image Source="Resources/Icons/Stop.png" Width="16" Height="16" HorizontalAlignment="Center" VerticalAlignment="Center" Style="{StaticResource FlatButtonImageDisablable}"/>
+                    </ToggleButton>
+                    <Button x:Name="buttonPrevious" Style="{StaticResource {x:Static ToolBar.ButtonStyleKey}}" HorizontalAlignment="Left" VerticalAlignment="Top" Width="20" ToolTip="Play Previous Wave" Focusable="False" IsTabStop="False" Height="20" Padding="0" Margin="1,0" Click="OnPrevious">
+                        <Image Source="Resources/Icons/Previous.png" Width="16" Height="16" HorizontalAlignment="Center" VerticalAlignment="Center" Style="{StaticResource FlatButtonImageDisablable}"/>
+                    </Button>
+                </StackPanel>
+
+                <Label x:Name="labelWaveEntries" Content="Wave Entries: 0" HorizontalAlignment="Left" Margin="10,57,0,0" VerticalAlignment="Top" Padding="0,5,5,5"/>
+                <ListView x:Name="listView" Margin="10,83,10,37" SelectionMode="Single" SelectionChanged="OnWaveSelectedChanged" DragEnter="OnDragEnter" DragLeave="OnDragLeave" DragOver="OnDragOver" Drop="OnFileDrop" />
+                <Label x:Name="labelDrop" AllowDrop="True" Margin="11,84,11,38" BorderBrush="#FF8C8E94" BorderThickness="0" Background="#CCF9F9F9" IsHitTestVisible="False" Content="Add Wave Files" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" FontSize="18" Visibility="Hidden"/>
+
+                <Button x:Name="buttonBuild" Content="Build" HorizontalAlignment="Left" Margin="10,0,0,10" VerticalAlignment="Bottom" Width="75" Click="OnBuild" ToolTip="Build a Wave Bank using the current wave files."/>
+                <Button x:Name="buttonExtract" Content="Extract" HorizontalAlignment="Left" Margin="90,0,0,10" VerticalAlignment="Bottom" Width="75" Click="OnExtract" ToolTip="Extract the contents of a Wave Bank."/>
+                <Button x:Name="buttonLoadList" Content="Open List" HorizontalAlignment="Right" Margin="0,0,90,10" VerticalAlignment="Bottom" Width="75" Click="OnLoadWaveList" ToolTip="Load a list of wave files."/>
+                <Button x:Name="buttonSaveList" Content="Save List" HorizontalAlignment="Right" Margin="0,0,10,10" VerticalAlignment="Bottom" Width="75" Click="OnSaveWaveList" ToolTip="Save a list of wave files."/>
+            </Grid>
+        </DockPanel>
+        <Grid x:Name="gridBuilding" Background="#CCF9F9F9" Visibility="Hidden">
+            <StackPanel VerticalAlignment="Center" Background="#FFFF9A56">
+                <Label x:Name="labelBuilding" Content="Building Wave Bank" VerticalContentAlignment="Center" FontSize="16" Foreground="White" Margin="0,12,0,5" HorizontalAlignment="Center" Padding="30,5,5,5" Width="206"/>
+
+                <StackPanel VerticalAlignment="Center" Orientation="Horizontal" HorizontalAlignment="Center">
+                    <Button Content="Cancel" HorizontalAlignment="Center" Margin="0,0,10,0" Width="75" Click="OnCancelBuildProcess" VerticalAlignment="Center"/>
+                    <Button x:Name="buttonConsole" Content="Show Log" HorizontalAlignment="Center" Margin="0" Width="75" Click="OnShowLog" VerticalAlignment="Center"/>
+                </StackPanel>
+                <Label x:Name="labelBuildTime" Content="Time: 0:00" HorizontalContentAlignment="Right" Padding="5,0,10,6" Foreground="White"/>
+            </StackPanel>
+        </Grid>
+        <Grid x:Name="gridExtracting" Background="#CCF9F9F9" Visibility="Hidden">
+            <StackPanel VerticalAlignment="Center" Background="#FFABD680">
+                <Label x:Name="labelExtracting" Content="Extracting Wave Bank" VerticalContentAlignment="Center" FontSize="16" Foreground="White" Margin="0,12,0,5" HorizontalAlignment="Center" Padding="37,5,5,5" Width="226"/>
+
+                <StackPanel VerticalAlignment="Center" Orientation="Horizontal" HorizontalAlignment="Center">
+                    <Button Content="Cancel" HorizontalAlignment="Center" Width="75" Click="OnCancelExtract" VerticalAlignment="Center"/>
+                </StackPanel>
+                <Label x:Name="labelExtractTime" Content="Time: 0:00" HorizontalContentAlignment="Right" Padding="5,0,10,6" Foreground="White"/>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</Window>

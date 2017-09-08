@@ -1,0 +1,15 @@
+﻿<Window x:Class="QuickWaveBank.Windows.VolumeDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:QuickWaveBank.Windows"
+        mc:Ignorable="d"
+        Title="Volume" Height="119" Width="286" Icon="/Resources/Icons/VolumeHigh.png" WindowStartupLocation="CenterOwner" ShowInTaskbar="False" Loaded="OnWindowLoaded">
+    <Grid>
+        <Slider x:Name="sliderVolume" Margin="20,10,20,0" VerticalAlignment="Top" Maximum="100" SmallChange="5" LargeChange="20" TickFrequency="5" ValueChanged="OnVolumeChanged" TickPlacement="BottomRight" Value="100"/>
+        <Button Content="OK" HorizontalAlignment="Right" Margin="0,0,10,10" VerticalAlignment="Bottom" Width="75" IsDefault="True" Focusable="False" IsTabStop="False" Click="OnOKClicked"/>
+        <CheckBox x:Name="checkboxMuted" Content="Mute" HorizontalAlignment="Left" Margin="20,0,0,13" VerticalAlignment="Bottom" Click="OnMuteChecked"/>
+        <Label x:Name="labelVolume" Content="Volume: 100%" HorizontalAlignment="Left" Margin="79,0,0,8" VerticalAlignment="Bottom"/>
+    </Grid>
+</Window>
