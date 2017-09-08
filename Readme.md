@@ -19,6 +19,7 @@ A quick and easy tool for creating Xact Wave Banks for use in games like Terrari
 
 ## Requirements for Source Code
 * Place *XactBld3.exe* from XNA Game Studio 4.0 in QuickWaveBank's Resources folder.
+* BuildConsole must be manually rebuilt after changes since it's only linked to QuickWaveBank by resource.
 
 ## Features
 * Create Wave Banks from wave files for use in games like Terraria.
