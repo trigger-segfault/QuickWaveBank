@@ -3,7 +3,7 @@ A quick and easy tool for creating Xact Wave Banks for use in games like Terrari
 
 ![Window Preview](http://i.imgur.com/MMTTIJU.png)
 
-### [Wiki](https://github.com/trigger-death/QuickWaveBank/wiki) | [Credits](https://github.com/trigger-death/QuickWaveBank/wiki/Credits) | [Image Album](http://imgur.com/a/LtTvj)
+### [Wiki](https://github.com/trigger-death/QuickWaveBank/wiki) | [Credits](https://github.com/trigger-death/QuickWaveBank/wiki/Credits) | [Image Album](http://imgur.com/a/9K2vT)
 
 ### [![Get Quick Wave Bank](http://)](https://github.com/trigger-death/QuickWaveBank/releases/tag/1.0.0.0)
 
