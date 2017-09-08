@@ -53,7 +53,7 @@ namespace QuickWaveBank.Extracting {
 			Label_RIFF.Length + 4 + Label_WAVE.Length + Label_fmt.Length +
 			4 + 2 + 2 + 4 + 4 + 2 + 2 + Label_data.Length + 4;
 
-		private const string WaveBankList = "TrackNames.txt";
+		private const string WaveBankList = "TrackList.txt";
 
 		/** Mapping of music wave bank indexes to their names */
 		public static string[] TrackNames = {

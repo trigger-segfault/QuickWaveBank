@@ -689,6 +689,8 @@ namespace QuickWaveBank {
 			try {
 				buildingAnimTimer.Stop();
 				extractThread.Abort();
+				gridWindow.IsEnabled = true;
+				gridExtracting.Visibility = Visibility.Hidden;
 			}
 			catch { }
 			gridWindow.IsEnabled = true;
