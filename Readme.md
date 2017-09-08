@@ -17,6 +17,9 @@ A quick and easy tool for creating Xact Wave Banks for use in games like Terrari
 * .NET Framwork 4.5.2 | [Offline Installer](https://www.microsoft.com/en-us/download/details.aspx?id=42642) | [Web Installer](https://www.microsoft.com/en-us/download/details.aspx?id=42643)
 * Windows 7 or later
 
+## Requirements for Source Code
+* Place *XactBld3.exe* from XNA Game Studio 4.0 in QuickWaveBank's Resources folder.
+
 ## Features
 * Create Wave Banks from wave files for use in games like Terraria.
 * Load and save wave file lists for later use.
