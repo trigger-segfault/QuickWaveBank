@@ -14,7 +14,7 @@ A quick and easy tool for creating Xact Wave Banks for use in games like Terrari
 * **Language:** C#, WPF
 
 ## Requirements for Running
-* .NET Framwork 4.5.2 | [Offline Installer](https://www.microsoft.com/en-us/download/details.aspx?id=42642) | [Web Installer](https://www.microsoft.com/en-us/download/details.aspx?id=42643)
+* .NET Framework 4.5.2 | [Offline Installer](https://www.microsoft.com/en-us/download/details.aspx?id=42642) | [Web Installer](https://www.microsoft.com/en-us/download/details.aspx?id=42643)
 * Windows 7 or later
 
 ## Requirements for Source Code
@@ -24,4 +24,4 @@ A quick and easy tool for creating Xact Wave Banks for use in games like Terrari
 * Create Wave Banks from wave files for use in games like Terraria.
 * Load and save wave file lists for later use.
 * Extract Wave Banks to facilitate modification.
-* No hastle. Visual Studio not required.
+* No hassle. Visual Studio not required.
