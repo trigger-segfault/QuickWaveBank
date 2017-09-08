@@ -5,12 +5,12 @@ A quick and easy tool for creating Xact Wave Banks for use in games like Terrari
 
 ### [Wiki](https://github.com/trigger-death/QuickWaveBank/wiki) | [Credits](https://github.com/trigger-death/QuickWaveBank/wiki/Credits) | [Image Album](http://imgur.com/a/9K2vT)
 
-### [![Get Quick Wave Bank](http://i.imgur.com/4pljyZm.png)](https://github.com/trigger-death/QuickWaveBank/releases/tag/1.0.0.0)
+### [![Get Quick Wave Bank](http://i.imgur.com/4pljyZm.png)](https://github.com/trigger-death/QuickWaveBank/releases/tag/1.0.0.1)
 
 ## About
 
 * **Created By:** Robert Jordan
-* **Version:** 1.0.0.0 *(not released yet)*
+* **Version:** 1.0.0.1
 * **Language:** C#, WPF
 
 ## Requirements for Running
