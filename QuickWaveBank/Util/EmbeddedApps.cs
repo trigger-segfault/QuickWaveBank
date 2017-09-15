@@ -33,9 +33,6 @@ namespace QuickWaveBank {
 	/// </list>
 	/// </summary>
 	public static class EmbeddedApps {
-		private static string tempFolder = "";
-		private const string TempFolderName = "QuickWaveBank";
-
 		/// <summary>
 		/// Extract DLLs from resources to temporary folder
 		/// </summary>
@@ -55,68 +52,5 @@ namespace QuickWaveBank {
 			}
 			return exePath;
 		}
-
-		/// <summary>
-		/// Extract DLLs from resources to temporary folder
-		/// </summary>
-		/// <param name="dllName">name of DLL file to create (including dll suffix)</param>
-		/// <param name="resourceBytes">The resource name (fully qualified)</param>
-		public static string ExtractEmbeddedDll(string dllName, byte[] resourceBytes) {
-			// The temporary folder holds one or more of the temporary DLLs
-			// It is made "unique" to avoid different versions of the DLL or architectures.
-			tempFolder = TempFolderName;
-
-			string dirName = Path.Combine(Path.GetTempPath(), tempFolder);
-			if (!Directory.Exists(dirName)) {
-				Directory.CreateDirectory(dirName);
-			}
-
-			// Add the temporary dirName to the PATH environment variable (at the head!)
-			string path = Environment.GetEnvironmentVariable("PATH");
-			string[] pathPieces = path.Split(';');
-			bool found = false;
-			foreach (string pathPiece in pathPieces) {
-				if (pathPiece == dirName) {
-					found = true;
-					break;
-				}
-			}
-			if (!found) {
-				Environment.SetEnvironmentVariable("PATH", dirName + ";" + path);
-			}
-
-			// See if the file exists, avoid rewriting it if not necessary
-			string dllPath = Path.Combine(dirName, dllName);
-			bool rewrite = true;
-			if (File.Exists(dllPath)) {
-				byte[] existing = File.ReadAllBytes(dllPath);
-				if (resourceBytes.SequenceEqual(existing)) {
-					rewrite = false;
-				}
-			}
-			if (rewrite) {
-				File.WriteAllBytes(dllPath, resourceBytes);
-			}
-			return dllPath;
-		}
-
-		[DllImport("kernel32", SetLastError = true, CharSet = CharSet.Unicode)]
-		static extern IntPtr LoadLibrary(string lpFileName);
-
-		/// <summary>
-		/// managed wrapper around LoadLibrary
-		/// </summary>
-		/// <param name="dllName"></param>
-		public static void LoadDll(string dllName) {
-			if (tempFolder == "") {
-				throw new Exception("Please call ExtractEmbeddedDlls before LoadDll");
-			}
-			IntPtr h = LoadLibrary(dllName);
-			if (h == IntPtr.Zero) {
-				Exception e = new Win32Exception();
-				throw new DllNotFoundException("Unable to load library: " + dllName + " from " + tempFolder, e);
-			}
-		}
-
 	}
 }

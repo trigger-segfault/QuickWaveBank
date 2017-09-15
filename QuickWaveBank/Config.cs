@@ -22,6 +22,20 @@ namespace QuickWaveBank {
 		S256 = 256,
 		S512 = 512
 	}
+	/**<summary>How to interact with the user when an audio file needs converting.</summary>*/
+	[Flags]
+	public enum ConvertOptions {
+		// Full Flags
+		Ask				= 0x0,
+		Auto			= 0x3,
+		WaitTillBuild	= 0x4,
+		
+		// Flags
+		AskConvert		= 0x0,
+		AskOverwrite	= 0x0,
+		AutoConvert		= 0x1,
+		AutoOverwrite	= 0x2
+	}
 
 	/**<summary>The config settings handler.</summary>*/
 	public static class Config {
@@ -41,6 +55,12 @@ namespace QuickWaveBank {
 		public static double Volume { get; set; } = 0.5;
 		/**<summary>True if the volume is muted.</summary>*/
 		public static bool Muted { get; set; } = false;
+		/**<summary>How file conversion is handled.</summary>*/
+		public static ConvertOptions ConvertOption { get; set; } = ConvertOptions.Ask;
+		/**<summary>The last visited directory of the folder browser.</summary>*/
+		public static string LastFolderBrowser { get; set; }
+		/**<summary>True if quick wave bank asks to save the track list on closing.</summary>*/
+		public static bool SaveConfirmation { get; set; } = true;
 
 		// Advanced
 		/**<summary>True if the wave bank is a streaming wave bank.</summary>*/
@@ -65,6 +85,16 @@ namespace QuickWaveBank {
 			TrackNames = Settings.Default.TrackNames;
 			Volume = Settings.Default.Volume;
 			Muted = Settings.Default.Muted;
+			LastFolderBrowser = Settings.Default.LastFolderBrowser;
+			SaveConfirmation = Settings.Default.SaveConfirmation;
+			if (string.IsNullOrEmpty(LastFolderBrowser)) {
+				LastFolderBrowser = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+			}
+			ConvertOptions convertOption;
+			if (Enum.TryParse(Settings.Default.ConvertOption, out convertOption))
+				ConvertOption = convertOption;
+			else
+				ConvertOption = ConvertOptions.Ask;
 
 			if (string.IsNullOrEmpty(OutputFile))
 				OutputFile = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "Wave Bank.xwb");
@@ -89,6 +119,9 @@ namespace QuickWaveBank {
 			Settings.Default.TrackNames = TrackNames;
 			Settings.Default.Volume = Volume;
 			Settings.Default.Muted = Muted;
+			Settings.Default.ConvertOption = ConvertOption.ToString();
+			Settings.Default.LastFolderBrowser = LastFolderBrowser;
+			Settings.Default.SaveConfirmation = SaveConfirmation;
 
 			// Advanced
 			Settings.Default.Streaming = Streaming;

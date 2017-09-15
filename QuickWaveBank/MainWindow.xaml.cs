@@ -29,6 +29,7 @@ using System.Threading;
 using Timer = System.Timers.Timer;
 using System.Media;
 using QuickWaveBank.Extracting;
+using System.Runtime.InteropServices;
 
 namespace QuickWaveBank {
 	/**<summary>The main window of the program.</summary>*/
@@ -37,7 +38,8 @@ namespace QuickWaveBank {
 		#region Constants
 
 		/**<summary>The path of the temporary folder.</summary>*/
-		private static readonly string TempDirectory = Path.Combine(Path.GetTempPath(), "QuickWaveBank");
+		private static readonly string TempDirectory = Path.Combine(Path.GetTempPath(), "TriggersToolsGames", "QuickWaveBank");
+		private static readonly string TempConverting = Path.Combine(TempDirectory, "Converting");
 		/**<summary>The path of the temporary XactBld3 executable.</summary>*/
 		private static readonly string TempXactBld = Path.Combine(TempDirectory, "XactBld3.exe");
 		/**<summary>The path of the temporary BuildConsole executable.</summary>*/
@@ -52,6 +54,19 @@ namespace QuickWaveBank {
 		private const int FailedExitCode = -100;
 		/**<summary>The main part of the window title.</summary>*/
 		private const string MainTitle = "Quick Wave Bank";
+		/**<summary>The list of supported file formats.</summary>*/
+		private static readonly Dictionary<string, string> SupportedFormats = new Dictionary<string, string>(){
+			{ "Wave Files",					"*.wav" },
+			{ "MP3 Files",					"*.mp3;*.mp2;*.mpga" },
+			{ "MP4 Files",                  "*.mp4" },
+			{ "AVI Files",                  "*.avi" },
+			{ "AAC Files",					"*.m4a;*.aac" },
+			{ "FLAC Files",					"*.flac" },
+			{ "Ogg Vorbis Files",			"*.ogg" },
+			{ "Windows Media Audio Files",	"*.wma" },
+			{ "Apple AIFF Files",           "*.aif;*.aiff;*aifc" }
+		};
+
 
 		#endregion
 		//=========== MEMBERS ============
@@ -69,6 +84,8 @@ namespace QuickWaveBank {
 		bool untitled = true;
 		/**<summary>The current wave list file.</summary>*/
 		string listFile = "";
+		/**<summary>True if the wave list has been modified since last saved.</summary>*/
+		bool modified = false;
 
 		#endregion
 		//--------------------------------
@@ -91,7 +108,7 @@ namespace QuickWaveBank {
 		/**<summary>True if the console is showing.</summary>*/
 		private DateTime buildStart;
 		/**<summary>The thread runnign the wave bank extraction process.</summary>*/
-		private Thread extractThread;
+		private Thread processThread;
 
 		#endregion
 		//--------------------------------
@@ -112,8 +129,6 @@ namespace QuickWaveBank {
 
 		/**<summary>True if the window has been loaded.</summary>*/
 		private bool loaded = false;
-		/**<summary>The last loaded directory.</summary>*/
-		private string directory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
 
 		#endregion
 		//--------------------------------
@@ -128,6 +143,9 @@ namespace QuickWaveBank {
 			// Setup temporary stuff
 			if (!Directory.Exists(TempDirectory)) {
 				Directory.CreateDirectory(TempDirectory);
+			}
+			if (!Directory.Exists(TempConverting)) {
+				Directory.CreateDirectory(TempConverting);
 			}
 			EmbeddedApps.ExtractEmbeddedExe(TempXactBld, Properties.Resources.XactBld3);
 			EmbeddedApps.ExtractEmbeddedExe(TempBuildConsole, Properties.Resources.BuildConsole);
@@ -169,15 +187,19 @@ namespace QuickWaveBank {
 			DataObject.AddCopyingHandler(textBoxOutput, (sender, e) => { if (e.IsDragDrop) e.CancelCommand(); });
 
 			LoadConfig();
-
-			// TODO:
-			// * Save list confirmation
+			UpdateTitle();
 		}
 
+		#endregion
+		//============ CONFIG ============
+		#region Config
+
+		/**<summary>Loads the config settings and sets up control states.</summary>*/
 		private void LoadConfig() {
 			Config.Load();
 
 			textBoxOutput.Text = Config.OutputFile;
+			menuItemSaveConfirmation.IsChecked = Config.SaveConfirmation;
 			menuItemTrackNames.IsChecked = Config.TrackNames;
 			menuItemDragAndDrop.IsChecked = Config.DragAndDrop;
 			menuItemShowLog.IsChecked = Config.ShowLog;
@@ -195,7 +217,14 @@ namespace QuickWaveBank {
 			}
 			if (Config.DragAndDrop)
 				dropManager.ListView = listView;
-			
+
+			menuItemAutoConvert.IsChecked = Config.ConvertOption.HasFlag(ConvertOptions.AutoConvert);
+			menuItemAutoOverwrite.IsChecked = Config.ConvertOption.HasFlag(ConvertOptions.AutoOverwrite);
+			menuItemWaitTillBuild.IsChecked = Config.ConvertOption.HasFlag(ConvertOptions.WaitTillBuild);
+
+			menuItemAutoConvert.IsEnabled = !Config.ConvertOption.HasFlag(ConvertOptions.WaitTillBuild);
+			menuItemAutoOverwrite.IsEnabled = !Config.ConvertOption.HasFlag(ConvertOptions.WaitTillBuild);
+
 			UpdateButtons();
 			UpdateVolume();
 		}
@@ -217,13 +246,61 @@ namespace QuickWaveBank {
 					UpdateTitle();
 				}
 				catch (Exception ex) {
-					var result2 = TriggerMessageBox.Show(this, MessageIcon.Error, "Failed to load wave list! Would you like to see the error?", "Save Failed", MessageBoxButton.YesNo);
+					var result2 = TriggerMessageBox.Show(this, MessageIcon.Error, "Failed to load track list! Would you like to see the error?", "Save Failed", MessageBoxButton.YesNo);
 					if (result2 == MessageBoxResult.Yes)
 						ErrorMessageBox.Show(ex);
 				}
 			}
 		}
 		private void OnWindowClosing(object sender, CancelEventArgs e) {
+			if (Config.SaveConfirmation && modified) {
+				var result = TriggerMessageBox.Show(this, MessageIcon.Question, "Do you want to save changes to the track list before closing?", "Unsaved Changes", MessageBoxButton.YesNoCancel);
+				if (result == MessageBoxResult.Yes) {
+					if (untitled) {
+						SaveFileDialog dialog = new SaveFileDialog();
+						dialog.Title = "Save Track List As";
+						dialog.DefaultExt = ".txt";
+						dialog.Filter = "Text Files|*.txt|All Files|*.*";
+						dialog.FilterIndex = 0;
+						dialog.AddExtension = true;
+						dialog.OverwritePrompt = true;
+						dialog.FileName = (untitled ? "Track List.txt" : Path.GetFileName(listFile));
+						if (!untitled)
+							dialog.InitialDirectory = Path.GetDirectoryName(listFile);
+						var result2 = dialog.ShowDialog(this);
+						if (result2.HasValue && result2.Value) {
+							try {
+								SaveWaveList(dialog.FileName);
+								listFile = dialog.FileName;
+								untitled = false;
+								modified = false;
+								UpdateTitle();
+							}
+							catch (Exception ex) {
+								result = TriggerMessageBox.Show(this, MessageIcon.Error, "Failed to save track list! Would you like to see the error?", "Save Failed", MessageBoxButton.YesNo);
+								if (result == MessageBoxResult.Yes)
+									ErrorMessageBox.Show(ex);
+							}
+						}
+						else {
+							e.Cancel = true;
+						}
+					}
+					else {
+						try {
+							OnSaveWaveList(null, null);
+						}
+						catch (Exception ex) {
+							var result2 = TriggerMessageBox.Show(this, MessageIcon.Error, "Failed to save track list! Would you like to see the error?", "Save Failed", MessageBoxButton.YesNo);
+							if (result2 == MessageBoxResult.Yes)
+								ErrorMessageBox.Show(ex);
+						}
+					}
+				}
+				else if (result == MessageBoxResult.Cancel) {
+					e.Cancel = true;
+				}
+			}
 			if (building) {
 				buildCanceled = true;
 				buildProcess.KillWithChildren();
@@ -255,9 +332,10 @@ namespace QuickWaveBank {
 				catch { }
 			}
 			reader.Close();
-			if (AddWaves(files.ToArray(), true)) {
-				TriggerMessageBox.Show(this, MessageIcon.Warning, "Some wave file paths have invalid characters. Paths cannot contain: '=', ';', '{', or '}'.", "Invalid Path");
-			}
+			AddWaves(files.ToArray(), true, true);
+			//if (AddWaves(files.ToArray(), true, true)) {
+			//TriggerMessageBox.Show(this, MessageIcon.Warning, "Some wave file paths have invalid characters. Paths cannot contain: '=', ';', '{', or '}'.", "Invalid Path");
+			//}
 		}
 		/**<summary>Saves the wave list.</summary>*/
 		private void SaveWaveList(string filepath) {
@@ -269,25 +347,95 @@ namespace QuickWaveBank {
 			writer.Close();
 		}
 		/**<summary>Loads waves from a directory.</summary>*/
-		private bool AddWaves(string directory, bool clearCurrent = false) {
-			return AddWaves(Directory.GetFiles(directory, "*.wav"), clearCurrent);
+		private bool AddWaves(string directory, bool clearCurrent, bool silent) {
+			List<string> files = new List<string>(Directory.GetFiles(directory));
+			for (int i = 0; i < files.Count; i++) {
+				bool validAudio = false;
+				string ext = Path.GetExtension(files[i]).ToLower();
+				foreach (string extensions in SupportedFormats.Values) {
+					if (extensions.Contains(ext)) {
+						validAudio = true;
+						break;
+					}
+				}
+				if (!validAudio) {
+					files.RemoveAt(i);
+					i--;
+				}
+			}
+			return AddWaves(files.ToArray(), clearCurrent, silent);
 		}
 		/**<summary>Loads waves from a directory.</summary>*/
-		private bool AddWaves(string[] files, bool clearCurrent = false) {
-			bool invalidFilePaths = false;
+		private bool AddWaves(string[] files, bool clearCurrent, bool silent) {
 			if (clearCurrent) {
 				OnStop(null, null);
 				waveFiles.Clear();
 				waveListViewItems.Clear();
+				modified = true;
 			}
-			for (int i = 0; i < files.Length; i++) {
-				string file = files[i];
-				if (!XapFile.ContainsFormatCharacter(file)) {
-					waveFiles.Add(file);
-					waveListViewItems.Add(MakeListViewItem(waveListViewItems.Count, file));
+
+			var result = MessageBoxResult.Yes;
+			int convertCount = 0;
+			int existsCount = 0;
+			bool wait = Config.ConvertOption.HasFlag(ConvertOptions.WaitTillBuild);
+			bool convert = Config.ConvertOption.HasFlag(ConvertOptions.AutoConvert) && !silent && !wait;
+			bool overwrite = Config.ConvertOption.HasFlag(ConvertOptions.AutoOverwrite) && !silent && !wait;
+			List<string> convertErrors = new List<string>();
+			List<string> formattingErrors = new List<string>();
+
+			if (!silent && !Config.ConvertOption.HasFlag(ConvertOptions.WaitTillBuild)) {
+				foreach (string file in files) {
+					if (Path.GetExtension(file).ToLower() != ".wav") {
+						convertCount++;
+						if (File.Exists(Path.ChangeExtension(file, ".wav")))
+							existsCount++;
+					}
 				}
-				else if (!invalidFilePaths) {
-					invalidFilePaths = true;
+			}
+
+			if (convertCount > 0 && !Config.ConvertOption.HasFlag(ConvertOptions.AutoConvert) && !silent && !wait) {
+				result = TriggerMessageBox.Show(this, MessageIcon.Question,
+					"Would you like to convert " + convertCount + " audio file" + (convertCount > 1 ? "s" : "") +
+					" to wave format? If not, " + (existsCount > 1 ? "they" : "it") + " will be converted at build-time.",
+					"Convert to Wave", MessageBoxButton.YesNoCancel
+				);
+				if (result == MessageBoxResult.Yes)
+					convert = true;
+			}
+			if (result != MessageBoxResult.Cancel) {
+				if (convert && existsCount != 0 && !Config.ConvertOption.HasFlag(ConvertOptions.AutoOverwrite)) {
+					result = TriggerMessageBox.Show(this, MessageIcon.Question, "Converting: " + existsCount + " wave file" +
+						(existsCount != 1 ? "s" : "") + " with the same name already exist" + (existsCount != 1 ? "" : "s") +
+						". Would you like to replace " + (existsCount > 1 ? "them" : "it") + " ?",
+						"Already Exists", MessageBoxButton.YesNoCancel
+					);
+					if (result != MessageBoxResult.Yes)
+						overwrite = true;
+				}
+				if (result != MessageBoxResult.Cancel) {
+					for (int i = 0; i < files.Length; i++) {
+						string audioFile = files[i];
+						if (XapFile.ContainsFormatCharacter(audioFile)) {
+							formattingErrors.Add((i + 1).ToString() + audioFile);
+							continue;
+						}
+						else if (Path.GetExtension(audioFile).ToLower() != ".wav") {
+							string waveFile = Path.ChangeExtension(audioFile, ".wav");
+							if (convert && (overwrite || !File.Exists(waveFile))) {
+								if (FFmpeg.Convert(audioFile, waveFile)) {
+									audioFile = waveFile;
+								}
+								else {
+									convertErrors.Add((i + 1).ToString() + Path.GetFileName(audioFile));
+									continue;
+								}
+							}
+						}
+						waveFiles.Add(audioFile);
+						waveListViewItems.Add(MakeListViewItem(waveListViewItems.Count, audioFile));
+						modified = true;
+					}
+
 				}
 			}
 			labelWaveEntries.Content = "Wave Entries: " + waveFiles.Count;
@@ -299,12 +447,57 @@ namespace QuickWaveBank {
 				listView.SelectedIndex = waveListViewItems.Count - 1;
 			}
 			UpdateButtons();
-			return invalidFilePaths;
+			if (convertErrors.Count > 0 && !silent) {
+				List<LogError> errors = new List<LogError>();
+				if (convertErrors.Count > 0) {
+					LogError error = new LogError(false, "Failed to convert the following files:", "");
+					foreach (string file in convertErrors) {
+						error.Message += "\n    " + file;
+					}
+					errors.Add(error);
+				}
+				if (formattingErrors.Count > 0) {
+					LogError error = new LogError(false, "The following files contained invalid formatting ('=', ';', '{', or '}'):", "");
+					foreach (string file in convertErrors) {
+						error.Message += "\n    " + file;
+					}
+					errors.Add(error);
+				}
+				if (errors.Count > 0) {
+					ErrorLogWindow.Show(this, errors.ToArray());
+				}
+			}
+			UpdateTitle();
+			return formattingErrors.Count > 0;
 		}
 		/**<summary>Adds a single wave.</summary>*/
-		private bool AddWave(string file) {
-			bool invalidFilePaths = false;
-			if (!XapFile.ContainsFormatCharacter(file)) {
+		private bool AddWave(string file, bool silent) {
+			string outputFile = Path.ChangeExtension(file, ".wav");
+			string ext = Path.GetExtension(file).ToLower();
+			if (XapFile.ContainsFormatCharacter(file)) {
+				if (!silent)
+					TriggerMessageBox.Show(this, MessageIcon.Warning, "Audio file path has invalid characters. Paths cannot contain: '=', ';', '{', or '}'.", "Invalid Path");
+				return false;
+			}
+			var result = MessageBoxResult.Yes;
+			if (ext != ".wav" && !silent && !Config.ConvertOption.HasFlag(ConvertOptions.WaitTillBuild)) {
+				if (!Config.ConvertOption.HasFlag(ConvertOptions.AutoConvert))
+					result = TriggerMessageBox.Show(this, MessageIcon.Question, "Would you like to convert this audio file to wave format? If not, it will be converted at build-time.", "Convert to Wave", MessageBoxButton.YesNoCancel);
+				if (result == MessageBoxResult.Yes) {
+					if (File.Exists(outputFile) && !Config.ConvertOption.HasFlag(ConvertOptions.AutoOverwrite))
+						result = TriggerMessageBox.Show(this, MessageIcon.Question, "Converting: A wave file with the same name already exists. Would you like to replace it?", "Already Exists", MessageBoxButton.YesNoCancel);
+					if (result == MessageBoxResult.Yes) {
+						if (!FFmpeg.Convert(file, outputFile)) {
+							TriggerMessageBox.Show(this, MessageIcon.Error, "Failed to convert audio file to wave format!", "Conversion Error");
+							result = MessageBoxResult.Cancel;
+						}
+						else {
+							file = outputFile;
+						}
+					}
+				}
+			}
+			if (result != MessageBoxResult.Cancel) {
 				waveFiles.Add(file);
 				ListViewItem item = MakeListViewItem(waveListViewItems.Count, file);
 				waveListViewItems.Add(item);
@@ -312,18 +505,13 @@ namespace QuickWaveBank {
 				labelWaveEntries.Content = "Wave Entries: " + waveFiles.Count;
 				listView.SelectedIndex = waveFiles.Count - 1;
 				UpdateButtons();
+				modified = true;
 			}
-			else if (!invalidFilePaths) {
-				invalidFilePaths = true;
-			}
-			if (listView.SelectedIndex == -1 && waveFiles.Count > 0) {
-				listView.SelectedIndex = 0;
-			}
-			UpdateButtons();
-			return invalidFilePaths;
+			UpdateTitle();
+			return true;
 		}
 		private void OnNewWaveList(object sender, RoutedEventArgs e) {
-			var result = TriggerMessageBox.Show(this, MessageIcon.Question, "Are you sure you want to start a new wave list?", "New Wave List", MessageBoxButton.YesNo);
+			var result = TriggerMessageBox.Show(this, MessageIcon.Question, "Are you sure you want to start a new track list?", "New Track List", MessageBoxButton.YesNo);
 			if (result == MessageBoxResult.Yes) {
 				OnStop(null, null);
 				waveFiles.Clear();
@@ -331,12 +519,13 @@ namespace QuickWaveBank {
 				UpdateButtons();
 				listFile = "";
 				untitled = true;
+				modified = false;
 				UpdateTitle();
 			}
 		}
 		private void OnLoadWaveList(object sender, RoutedEventArgs e) {
 			OpenFileDialog dialog = new OpenFileDialog();
-			dialog.Title = "Load Wave List";
+			dialog.Title = "Load Track List";
 			dialog.DefaultExt = ".txt";
 			dialog.Filter = "Text Files|*.txt|All Files|*.*";
 			dialog.FilterIndex = 0;
@@ -348,10 +537,11 @@ namespace QuickWaveBank {
 					LoadWaveList(dialog.FileName);
 					listFile = dialog.FileName;
 					untitled = false;
+					modified = false;
 					UpdateTitle();
 				}
 				catch (Exception ex) {
-					var result2 = TriggerMessageBox.Show(this, MessageIcon.Error, "Failed to load wave list! Would you like to see the error?", "Save Failed", MessageBoxButton.YesNo);
+					var result2 = TriggerMessageBox.Show(this, MessageIcon.Error, "Failed to load track list! Would you like to see the error?", "Load Failed", MessageBoxButton.YesNo);
 					if (result2 == MessageBoxResult.Yes)
 						ErrorMessageBox.Show(ex);
 				}
@@ -364,9 +554,10 @@ namespace QuickWaveBank {
 			else {
 				try {
 					SaveWaveList(listFile);
+					modified = false;
 				}
 				catch (Exception ex) {
-					var result2 = TriggerMessageBox.Show(this, MessageIcon.Error, "Failed to save wave list! Would you like to see the error?", "Save Failed", MessageBoxButton.YesNo);
+					var result2 = TriggerMessageBox.Show(this, MessageIcon.Error, "Failed to save track list! Would you like to see the error?", "Save Failed", MessageBoxButton.YesNo);
 					if (result2 == MessageBoxResult.Yes)
 						ErrorMessageBox.Show(ex);
 				}
@@ -374,14 +565,13 @@ namespace QuickWaveBank {
 		}
 		private void OnSaveWaveListAs(object sender, RoutedEventArgs e) {
 			SaveFileDialog dialog = new SaveFileDialog();
-			dialog.Title = "Save Wave List As";
-			dialog.FileName = "Wave List.txt";
+			dialog.Title = "Save Track List As";
 			dialog.DefaultExt = ".txt";
 			dialog.Filter = "Text Files|*.txt|All Files|*.*";
 			dialog.FilterIndex = 0;
 			dialog.AddExtension = true;
 			dialog.OverwritePrompt = true;
-			dialog.FileName = (untitled ? "Wave List.txt" : Path.GetFileName(listFile));
+			dialog.FileName = (untitled ? "Track List.txt" : Path.GetFileName(listFile));
 			if (!untitled)
 				dialog.InitialDirectory = Path.GetDirectoryName(listFile);
 			var result = dialog.ShowDialog(this);
@@ -390,10 +580,11 @@ namespace QuickWaveBank {
 					SaveWaveList(dialog.FileName);
 					listFile = dialog.FileName;
 					untitled = false;
+					modified = false;
 					UpdateTitle();
 				}
 				catch (Exception ex) {
-					var result2 = TriggerMessageBox.Show(this, MessageIcon.Error, "Failed to save wave list! Would you like to see the error?", "Save Failed", MessageBoxButton.YesNo);
+					var result2 = TriggerMessageBox.Show(this, MessageIcon.Error, "Failed to save track list! Would you like to see the error?", "Save Failed", MessageBoxButton.YesNo);
 					if (result2 == MessageBoxResult.Yes)
 						ErrorMessageBox.Show(ex);
 				}
@@ -438,7 +629,7 @@ namespace QuickWaveBank {
 			TextBlock nameText = new TextBlock();
 			nameText.HorizontalAlignment = HorizontalAlignment.Left;
 			nameText.VerticalAlignment = VerticalAlignment.Center;
-			nameText.Text = Path.GetFileNameWithoutExtension(waveFile);
+			nameText.Text = Path.GetFileName(waveFile);
 			nameText.TextTrimming = TextTrimming.CharacterEllipsis;
 			grid.Children.Add(nameText);
 			Grid.SetColumn(nameText, 1);
@@ -470,7 +661,7 @@ namespace QuickWaveBank {
 			indexText.Text = (index + 1).ToString();
 
 			TextBlock nameText = (TextBlock)grid.Children[2];
-			nameText.Text = Path.GetFileNameWithoutExtension(waveFile);
+			nameText.Text = Path.GetFileName(waveFile);
 			nameText.FontWeight = (item == playItem ? FontWeights.Bold : FontWeights.Regular);
 
 			TextBlock typeText = (TextBlock)grid.Children[3];
@@ -503,15 +694,19 @@ namespace QuickWaveBank {
 			if (Config.Streaming)
 				waveBank.SetVariable("Streaming", "1");
 
-			foreach (string waveFile in waveFiles) {
-				WriteXapWave(waveBank, waveFile);
+			for (int i = 0; i < waveFiles.Count; i++) {
+				WriteXapWave(waveBank, i);
 			}
 
 			xapFile.Save(TempProjectFile);
 		}
 		/**<summary>Adds a wave to the Xap project file's wave bank.</summary>*/
-		private void WriteXapWave(XapGroup waveBank, string waveFile) {
+		private void WriteXapWave(XapGroup waveBank, int index) {
 			XapGroup group = new XapGroup("Wave");
+			string waveFile = waveFiles[index];
+			if (Path.GetExtension(waveFile).ToLower() != ".wav") {
+				waveFile = GetTempWavePath(index);
+			}
 			group.AddVariable("Name", Path.GetFileNameWithoutExtension(waveFile));
 			group.AddVariable("File", waveFile);
 			waveBank.AddGroup(group);
@@ -533,104 +728,187 @@ namespace QuickWaveBank {
 		//--------------------------------
 		#region Building
 
+		private string GetTempWavePath(int index) {
+			//string filename = Path.ChangeExtension(Path.GetFileName(waveFiles[index]), ".wav");
+			return Path.Combine(TempDirectory, "Converting", (index+1).ToString("D2") + ".wav");// + " " + filename);
+		}
 		private void OnBuild(object sender, RoutedEventArgs e) {
-			WriteXapProject();
-
-			if (File.Exists(TempWaveBank))
-				lastModified = File.GetLastWriteTime(TempWaveBank);
-			else
-				lastModified = DateTime.Now;
-
-			try {
-				FileStream stream = new FileStream(TempWaveBank, FileMode.OpenOrCreate, FileAccess.Write);
-				stream.Close();
-			}
-			catch (Exception) {
-				TriggerMessageBox.Show(this, MessageIcon.Error, "Cannot write to temporary file!", "Write Error");
+			if (waveFiles.Count == 0) {
+				TriggerMessageBox.Show(this, MessageIcon.Warning, "You must add audio tracks before building.", "No Tracks");
 				return;
 			}
-			try {
-				FileStream stream = new FileStream(Config.OutputFile, FileMode.OpenOrCreate, FileAccess.Write);
-				stream.Close();
-			}
-			catch (Exception) {
-				TriggerMessageBox.Show(this, MessageIcon.Error, "Cannot write to output file!", "Write Error");
-				return;
-			}
+			processThread = new Thread(() => {
+				WriteXapProject();
 
-			buildStart = DateTime.Now;
-			showingLog = Config.ShowLog;
-			buildCanceled = false;
-			buttonConsole.Content = (Config.ShowLog ? "Hide" : "Show") + " Log";
-			buildProcess.StartInfo.WindowStyle = (Config.ShowLog ? ProcessWindowStyle.Normal : ProcessWindowStyle.Minimized);
-			buildProcess.Start();
-			if (!Config.ShowLog) {
-				Thread.Sleep(50);
-				buildProcess.Hide();
-			}
-			building = true;
-			gridBuilding.Visibility = Visibility.Visible;
-			gridWindow.IsEnabled = false;
-			buildingAnimTimer.Start();
-			buildingAnimDots = 0;
-			labelBuilding.Content = "Building Wave Bank";
-			labelBuildTime.Content = "Time: " + (DateTime.Now - buildStart).ToString(@"m\:ss");
+				bool needsToConvet = false;
+				foreach (string waveFile in waveFiles) {
+					if (Path.GetExtension(waveFile).ToLower() != ".wav") {
+						needsToConvet = true;
+						break;
+					}
+				}
+
+				Dispatcher.Invoke(() => {
+					try {
+						FileStream stream = new FileStream(TempWaveBank, FileMode.OpenOrCreate, FileAccess.Write);
+						stream.Close();
+					}
+					catch (Exception) {
+						TriggerMessageBox.Show(this, MessageIcon.Error, "Cannot write to temporary file!", "Write Error");
+						return;
+					}
+					try {
+						FileStream stream = new FileStream(Config.OutputFile, FileMode.OpenOrCreate, FileAccess.Write);
+						stream.Close();
+					}
+					catch (Exception) {
+						TriggerMessageBox.Show(this, MessageIcon.Error, "Cannot write to output file!", "Write Error");
+						return;
+					}
+
+					buildStart = DateTime.Now;
+					showingLog = Config.ShowLog;
+					buildCanceled = false;
+					buttonConsole.IsEnabled = false;
+					buttonConsole.Content = "Show Log";
+					building = true;
+					gridBuilding.Visibility = Visibility.Visible;
+					gridWindow.IsEnabled = false;
+					buildingAnimTimer.Start();
+					buildingAnimDots = 0;
+					labelBuilding.Content = (needsToConvet ? "Converting Audio Files" : "Building Wave Bank");
+					labelBuildTime.Content = "Time: " + (DateTime.Now - buildStart).ToString(@"m\:ss");
+				});
+
+				if (needsToConvet) {
+					List<string> errorFiles = new List<string>();
+
+					for (int i = 0; i < waveFiles.Count; i++) {
+						string audioFile = waveFiles[i];
+						if (Path.GetExtension(audioFile).ToLower() != ".wav") {
+							string waveFile = GetTempWavePath(i);
+							if (!FFmpeg.Convert(audioFile, waveFile))
+								errorFiles.Add((i + 1).ToString() + " " + Path.GetFileName(audioFile));
+						}
+					}
+					
+					if (errorFiles.Count > 0) {
+						buildCanceled = true;
+						OnBuildProcessExited(null, null);
+						LogError error = new LogError(false, "Failed to convert the following files:", "");
+						foreach (string file in errorFiles) {
+							error.Message += "\n    " + file;
+						}
+						Dispatcher.Invoke(() => {
+							ErrorLogWindow.Show(this, new LogError[] { error });
+						});
+						return;
+					}
+				}
+
+				if (File.Exists(TempWaveBank))
+					lastModified = File.GetLastWriteTime(TempWaveBank);
+				else
+					lastModified = DateTime.Now;
+
+				buildProcess.StartInfo.WindowStyle = (Config.ShowLog ? ProcessWindowStyle.Normal : ProcessWindowStyle.Minimized);
+				buildProcess.Start();
+				if (!Config.ShowLog) {
+					Thread.Sleep(50);
+					buildProcess.Hide();
+				}
+				Dispatcher.Invoke(() => {
+					buttonConsole.IsEnabled = true;
+					buttonConsole.Content = (Config.ShowLog ? "Hide" : "Show") + " Log";
+					labelBuilding.Content = "Building Wave Bank";
+				});
+			});
+			processThread.Start();
 		}
 		private void OnCancelBuildProcess(object sender, RoutedEventArgs e) {
 			if (building) {
 				buildCanceled = true;
-				buildProcess.KillWithChildren();
+				try {
+					if (processThread.ThreadState != System.Threading.ThreadState.Stopped)
+						processThread.Abort();
+				}
+				catch { }
+				try {
+					buildProcess.KillWithChildren();
+				}
+				catch (InvalidOperationException) {
+					// Build process never started
+				}
+				// Cleanup is handled in OnBuildProcessExited
 			}
 		}
 		private void OnBuildProcessExited(object sender, EventArgs e) {
 			building = false;
 			Dispatcher.Invoke(() => {
 				buildingAnimTimer.Stop();
-				if (buildProcess.ExitCode == CancelExitCode) {
-					TriggerMessageBox.Show(this, MessageIcon.Info, "Wave Bank creation canceled.", "Build Canceled");
-				}
-				else if (buildProcess.ExitCode == FailedExitCode) {
-					TriggerMessageBox.Show(this, MessageIcon.Error, "Wave Bank creation failed! See console log for more information.", "Build Failed");
-				}
-				else if (!buildCanceled) {
-					bool error = true;
-					try {
-						if (File.Exists(TempWaveBank) && File.GetLastWriteTime(TempWaveBank) > lastModified) {
-							// Success
-							try {
-								File.Copy(TempWaveBank, Config.OutputFile, true);
-								File.Delete(TempWaveBank);
-								error = false;
-								var result = TriggerMessageBox.Show(this, MessageIcon.Info, "Wave Bank creation successful! Would you like to open the folder?", "Build Success", MessageBoxButton.YesNo);
-								if (result == MessageBoxResult.Yes)
-									Process.Start("explorer.exe", "/select, \"" + Config.OutputFile + "\"");
-							}
-							catch (Exception) {
-								// Wave Bank not successfully written
-								TriggerMessageBox.Show(this, MessageIcon.Error, "Failed to copy created Wave Bank from temporary directory!", "Copy Failed");
-								error = false; // Handled
-							}
-						}
+				try {
+					if (buildProcess.ExitCode == CancelExitCode) {
+						TriggerMessageBox.Show(this, MessageIcon.Info, "Wave Bank creation canceled.", "Build Canceled");
 					}
-					catch (Exception) { }
-					if (error) {
+					else if (buildProcess.ExitCode == FailedExitCode) {
 						TriggerMessageBox.Show(this, MessageIcon.Error, "Wave Bank creation failed! See console log for more information.", "Build Failed");
 					}
+					else if (!buildCanceled) {
+						bool error = true;
+						try {
+							if (File.Exists(TempWaveBank) && File.GetLastWriteTime(TempWaveBank) > lastModified) {
+								// Success
+								try {
+									File.Copy(TempWaveBank, Config.OutputFile, true);
+									File.Delete(TempWaveBank);
+									error = false;
+									var result = TriggerMessageBox.Show(this, MessageIcon.Info, "Wave Bank creation successful! Would you like to open the folder?", "Build Success", MessageBoxButton.YesNo);
+									if (result == MessageBoxResult.Yes)
+										Process.Start("explorer.exe", "/select, \"" + Config.OutputFile + "\"");
+								}
+								catch (Exception) {
+									// Wave Bank not successfully written
+									TriggerMessageBox.Show(this, MessageIcon.Error, "Failed to copy created Wave Bank from temporary directory!", "Copy Failed");
+									error = false; // Handled
+								}
+							}
+						}
+						catch (Exception) { }
+						if (error) {
+							TriggerMessageBox.Show(this, MessageIcon.Error, "Wave Bank creation failed! See console log for more information.", "Build Failed");
+						}
+					}
 				}
+				catch (InvalidOperationException) {
+					// Build process never started
+				}
+
+				// Cleanup temp converting wave files
+				DirectoryInfo di = new DirectoryInfo(TempConverting);
+				foreach (FileInfo file in di.GetFiles()) {
+					file.Delete();
+				}
+				
 				gridWindow.IsEnabled = true;
 				gridBuilding.Visibility = Visibility.Hidden;
 			});
 		}
 		private void OnBuildingAnimTimerElapsed(object sender, ElapsedEventArgs e) {
-			string text = "Wave Bank";
+			string text = "";
 			buildingAnimDots = (buildingAnimDots + 1) % 4;
 			for (int i = 0; i < buildingAnimDots; i++) {
 				text += " .";
 			}
 			Dispatcher.Invoke(() => {
-				labelBuilding.Content = "Building " + text;
+				string message = (string)labelBuilding.Content;
+				while (message.EndsWith(" ."))
+					message = message.Substring(0, message.Length - 2);
+				labelBuilding.Content = message + text;
 				labelBuildTime.Content = "Time: " + (DateTime.Now - buildStart).ToString(@"m\:ss");
-				labelExtracting.Content = "Extracting " + text;
+				message = (string)labelExtracting.Content;
+				while (message.EndsWith(" ."))
+					message = message.Substring(0, message.Length - 2);
+				labelExtracting.Content = message + text;
 				labelExtractTime.Content = "Time: " + (DateTime.Now - buildStart).ToString(@"m\:ss");
 			});
 		}
@@ -671,7 +949,7 @@ namespace QuickWaveBank {
 					string directory = browser.SelectedPath;
 					browser.Dispose();
 					browser = null;
-					extractThread = new Thread(() => {
+					processThread = new Thread(() => {
 						Extract(file, directory);
 					});
 					gridWindow.IsEnabled = false;
@@ -681,14 +959,14 @@ namespace QuickWaveBank {
 					buildStart = DateTime.Now;
 					labelExtracting.Content = "Extracting Wave Bank";
 					labelExtractTime.Content = "Time: " + (DateTime.Now - buildStart).ToString(@"m\:ss");
-					extractThread.Start();
+					processThread.Start();
 				}
 			}
 		}
 		private void OnCancelExtract(object sender, RoutedEventArgs e) {
 			try {
 				buildingAnimTimer.Stop();
-				extractThread.Abort();
+				processThread.Abort();
 				gridWindow.IsEnabled = true;
 				gridExtracting.Visibility = Visibility.Hidden;
 			}
@@ -761,30 +1039,37 @@ namespace QuickWaveBank {
 
 		private void OnFileDrop(object sender, DragEventArgs e) {
 			labelDrop.Visibility = Visibility.Hidden;
-			if (this.OwnedWindows.Count == 0 && e.Data.GetDataPresent(DataFormats.FileDrop)) {
-				string[] initialFiles = (string[])e.Data.GetData(DataFormats.FileDrop);
-				List<string> finalFiles = new List<string>();
-				foreach (string file in initialFiles) {
-					if (Path.GetExtension(file).ToLower() == ".wav")
-						finalFiles.Add(file);
-				}
-				if (AddWaves(finalFiles.ToArray())) {
-					TriggerMessageBox.Show(this, MessageIcon.Warning, "Some wave file paths have invalid characters. Paths cannot contain: '=', ';', '{', or '}'.", "Invalid Path");
+			if (this.OwnedWindows.Count == 0) {
+				if (e.Data.GetDataPresent(DataFormats.FileDrop)) {
+					string[] initialFiles = (string[])e.Data.GetData(DataFormats.FileDrop);
+					List<string> finalFiles = new List<string>();
+					for (int i = 0; i < initialFiles.Length; i++) {
+						string ext = Path.GetExtension(initialFiles[i]).ToLower();
+						foreach (string extensions in SupportedFormats.Values) {
+							if (extensions.Contains(ext)) {
+								finalFiles.Add(initialFiles[i]);
+								break;
+							}
+						}
+					}
+					AddWaves(finalFiles.ToArray().ToArray(), false, false);
 				}
 			}
 		}
 		private void OnDragEnter(object sender, DragEventArgs e) {
-			if (this.OwnedWindows.Count == 0 && e.Data.GetDataPresent(DataFormats.FileDrop)) {
+			if (this.OwnedWindows.Count == 0 && (e.Data.GetDataPresent(DataFormats.FileDrop))) {
 				labelDrop.Visibility = Visibility.Visible;
 				e.Effects = DragDropEffects.Copy;
+				e.Handled = true;
 			}
 			else {
 				e.Effects = DragDropEffects.None;
 			}
 		}
 		private void OnDragOver(object sender, DragEventArgs e) {
-			if (this.OwnedWindows.Count == 0 && e.Data.GetDataPresent(DataFormats.FileDrop)) {
+			if (this.OwnedWindows.Count == 0 && (e.Data.GetDataPresent(DataFormats.FileDrop))) {
 				e.Effects = DragDropEffects.Copy;
+				e.Handled = true;
 			}
 			else {
 				e.Effects = DragDropEffects.None;
@@ -802,6 +1087,11 @@ namespace QuickWaveBank {
 		private void PlayIndex(int index) {
 			OnStop(null, null);
 			try {
+				string ext = Path.GetExtension(waveFiles[index]).ToLower();
+				if (ext == ".flac" || ext == ".ogg") {
+					TriggerMessageBox.Show(this, MessageIcon.Warning, "FLAC and Ogg Vorbis playback is not supported.", "Unsupported Format");
+					return;
+				}
 				player.Stop();
 				player.Open(new Uri(waveFiles[index], UriKind.RelativeOrAbsolute));
 				player.Play();
@@ -811,7 +1101,7 @@ namespace QuickWaveBank {
 				UpdateListViewItem(playItem, index, waveFiles[index]);
 			}
 			catch (Exception) {
-				TriggerMessageBox.Show(this, MessageIcon.Error, "Failed to play wave file.", "Play Error");
+				TriggerMessageBox.Show(this, MessageIcon.Warning, "Failed to play wave file. Format may be unsupported.", "Play Error");
 			}
 			UpdateButtons();
 		}
@@ -889,17 +1179,19 @@ namespace QuickWaveBank {
 
 			OpenFileDialog dialog = new OpenFileDialog();
 			dialog.Title = "Add Wave File";
-			dialog.Filter = "Wave Files|*.wav|All Files|*.*";
+			string audioFiles = "AudioFiles|";
+			string filters = "";
+			foreach (KeyValuePair<string, string> pair in SupportedFormats) {
+				audioFiles += pair.Value + ";";
+				filters += pair.Key + "|" + pair.Value + "|";
+			}
+			audioFiles = audioFiles.Substring(0, audioFiles.Length - 1) + "|";
+			dialog.Filter = audioFiles + filters + "All Files|*.*";
 			dialog.FilterIndex = 0;
 			var result = dialog.ShowDialog(this);
 			if (result.HasValue && result.Value) {
 				string file = dialog.FileName;
-				if (AddWave(file)) {
-					TriggerMessageBox.Show(this, MessageIcon.Warning, "Wave file path has invalid characters. Paths cannot contain: '=', ';', '{', or '}'.", "Invalid Path");
-				}
-				else {
-					listView.ScrollIntoView(waveListViewItems[waveListViewItems.Count - 1]);
-				}
+				AddWave(file, false);
 			}
 			loaded = true;
 		}
@@ -924,19 +1216,39 @@ namespace QuickWaveBank {
 		private void OnAddWaveFolder(object sender, RoutedEventArgs e) {
 			FolderBrowserDialog browser = new FolderBrowserDialog();
 			browser.Description = "Choose a folder with wave files";
-			browser.SelectedPath = directory;
+			browser.SelectedPath = Config.LastFolderBrowser;
 			browser.ShowNewFolderButton = false;
 			var result = browser.ShowFolderBrowser(this);
 			if (result.HasValue && result.Value) {
-				directory = browser.SelectedPath;
-				browser.Dispose();
-				browser = null;
+				Config.LastFolderBrowser = browser.SelectedPath;
 				var result2 = MessageBoxResult.Yes;
 				if (waveFiles.Count > 0)
 					result2 = TriggerMessageBox.Show(this, MessageIcon.Question, "Would you like to remove the current waves?", "Remove Waves", MessageBoxButton.YesNoCancel);
 				if (result2 != MessageBoxResult.Cancel) {
-					if (AddWaves(directory, result2 == MessageBoxResult.Yes)) {
-						TriggerMessageBox.Show(this, MessageIcon.Warning, "Some wave file paths have invalid characters. Paths cannot contain: '=', ';', '{', or '}'.", "Invalid Path");
+					AddWaves(Config.LastFolderBrowser, result2 == MessageBoxResult.Yes, false);
+				}
+			}
+			browser.Dispose();
+			browser = null;
+		}
+		private void OnConvertToWave(object sender, RoutedEventArgs e) {
+			int index = listView.SelectedIndex;
+			string audioFile = waveFiles[index];
+			string waveFile = Path.ChangeExtension(audioFile, ".wav");
+			var result = TriggerMessageBox.Show(this, MessageIcon.Question, "Would you like to convert this audio file to wave format now?", "Convert to Wave", MessageBoxButton.YesNoCancel);
+			if (result == MessageBoxResult.Yes) {
+				if (File.Exists(waveFile) && !Config.ConvertOption.HasFlag(ConvertOptions.AutoOverwrite))
+					result = TriggerMessageBox.Show(this, MessageIcon.Question, "Converting: A wave file with the same name already exists. Would you like to replace it?", "Already Exists", MessageBoxButton.YesNoCancel);
+				if (result == MessageBoxResult.Yes) {
+					if (!FFmpeg.Convert(audioFile, waveFile)) {
+						TriggerMessageBox.Show(this, MessageIcon.Error, "Failed to convert audio file to wave format!", "Conversion Error");
+						result = MessageBoxResult.Cancel;
+					}
+					else {
+						waveFiles[index] = waveFile;
+						UpdateListViewItem((ListViewItem)listView.Items[index], index, waveFile);
+						modified = true;
+						UpdateTitle();
 					}
 				}
 			}
@@ -948,6 +1260,8 @@ namespace QuickWaveBank {
 				waveFiles.Clear();
 				waveListViewItems.Clear();
 				UpdateButtons();
+				modified = true;
+				UpdateTitle();
 			}
 		}
 		private void OnMoveWaveUp(object sender, RoutedEventArgs e) {
@@ -959,6 +1273,8 @@ namespace QuickWaveBank {
 			listView.ScrollIntoView(waveListViewItems[newIndex]);
 			listView.SelectedIndex = newIndex;
 			UpdateButtons();
+			modified = true;
+			UpdateTitle();
 		}
 		private void OnMoveWaveDown(object sender, RoutedEventArgs e) {
 			int oldIndex = listView.SelectedIndex;
@@ -969,6 +1285,8 @@ namespace QuickWaveBank {
 			listView.SelectedIndex = newIndex;
 			listView.ScrollIntoView(waveListViewItems[newIndex]);
 			UpdateButtons();
+			modified = true;
+			UpdateTitle();
 		}
 		private void OnWaveSelectedChanged(object sender, SelectionChangedEventArgs e) {
 			UpdateButtons();
@@ -977,6 +1295,8 @@ namespace QuickWaveBank {
 			if (e.OldIndex > -1) {
 				waveFiles.Move(e.OldIndex, e.NewIndex);
 				waveListViewItems.Move(e.OldIndex, e.NewIndex);
+				modified = true;
+				UpdateTitle();
 				UpdateListViewItemRange(Math.Min(e.OldIndex, e.NewIndex), Math.Max(e.OldIndex, e.NewIndex));
 			}
 
@@ -997,7 +1317,10 @@ namespace QuickWaveBank {
 		#endregion
 		//--------------------------------
 		#region Options
-
+			
+		private void OnSaveConfirmationChecked(object sender, RoutedEventArgs e) {
+			Config.SaveConfirmation = menuItemSaveConfirmation.IsChecked;
+		}
 		private void OnTrackNamesChecked(object sender, RoutedEventArgs e) {
 			Config.TrackNames = menuItemTrackNames.IsChecked;
 			UpdateListViewItemRange(0, waveListViewItems.Count - 1);
@@ -1011,6 +1334,18 @@ namespace QuickWaveBank {
 		}
 		private void OnChangeVolume(object sender, RoutedEventArgs e) {
 			VolumeDialog.Show(this, UpdateVolume);
+		}
+
+		private void OnAutoConvert(object sender, RoutedEventArgs e) {
+			Config.ConvertOption = Config.ConvertOption.SetFlag(ConvertOptions.AutoConvert, menuItemAutoConvert.IsChecked);
+		}
+		private void OnAutoOverwrite(object sender, RoutedEventArgs e) {
+			Config.ConvertOption = Config.ConvertOption.SetFlag(ConvertOptions.AutoOverwrite, menuItemAutoOverwrite.IsChecked);
+		}
+		private void OnWaitTillBuild(object sender, RoutedEventArgs e) {
+			Config.ConvertOption = Config.ConvertOption.SetFlag(ConvertOptions.WaitTillBuild, menuItemWaitTillBuild.IsChecked);
+			menuItemAutoConvert.IsEnabled = !menuItemWaitTillBuild.IsChecked;
+			menuItemAutoOverwrite.IsEnabled = !menuItemWaitTillBuild.IsChecked;
 		}
 
 		private void OnStreamingChecked(object sender, RoutedEventArgs e) {
@@ -1059,7 +1394,7 @@ namespace QuickWaveBank {
 
 		/**<summary>Updates the window title.</summary>*/
 		private void UpdateTitle() {
-			Title = MainTitle + (untitled ? "" : " - " + Path.GetFileName(listFile));
+			Title = MainTitle + " - " + (untitled ? "Untitled" : Path.GetFileName(listFile)) + (modified ? "*" : "");
 		}
 		/**<summary>Updates changes to button states.</summary>*/
 		private void UpdateButtons() {
@@ -1075,6 +1410,8 @@ namespace QuickWaveBank {
 			buttonStop.IsChecked = playItem == null;
 			buttonNext.IsEnabled = playItem != null;
 			buttonPrevious.IsEnabled = playItem != null;
+			buttonConvert.IsEnabled = listView.SelectedIndex != -1 &&
+				Path.GetExtension(waveFiles[listView.SelectedIndex]).ToLower() != ".wav";
 		}
 		/**<summary>Updates changes to volume.</summary>*/
 		private void UpdateVolume() {

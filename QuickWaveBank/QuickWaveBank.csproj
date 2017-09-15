@@ -84,6 +84,9 @@
     <Compile Include="Windows\CreditsWindow.xaml.cs">
       <DependentUpon>CreditsWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Windows\ErrorLogWindow.xaml.cs">
+      <DependentUpon>ErrorLogWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Windows\ErrorMessageBox.xaml.cs">
       <DependentUpon>ErrorMessageBox.xaml</DependentUpon>
     </Compile>
@@ -122,6 +125,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Windows\CreditsWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Windows\ErrorLogWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
@@ -308,6 +315,12 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Resources\Icons\TerrariaIcon.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\Icons\Convert.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\Icons\SaveConfirmation.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

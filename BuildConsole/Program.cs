@@ -15,7 +15,7 @@ namespace BuildConsole {
 		#region Constants
 
 		/**<summary>The path of the temporary folder.</summary>*/
-		private static readonly string TempDirectory = Path.Combine(Path.GetTempPath(), "QuickWaveBank");
+		private static readonly string TempDirectory = Path.Combine(Path.GetTempPath(), "TriggersToolsGames", "QuickWaveBank");
 		/**<summary>The path of the temporary XactBld3 executable.</summary>*/
 		private static readonly string TempXactBld = Path.Combine(TempDirectory, "XactBld3.exe");
 		/**<summary>The path of the temporary BuildConsole executable.</summary>*/

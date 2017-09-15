@@ -34,13 +34,13 @@ using QuickWaveBank.Properties;
 namespace QuickWaveBank.Extracting {
 	public static class FFmpeg {
 		// Use TConvert's path since it's already established. No reason to have duplicate files
-		private static readonly string TempFFmpeg = Path.Combine(Path.GetTempPath(), "TConvert", "ffmpeg.exe");
+		private static readonly string TempFFmpeg = Path.Combine(Path.GetTempPath(), "TriggersToolsGames", "ffmpeg.exe");
 
 		static FFmpeg() {
 			EmbeddedApps.ExtractEmbeddedExe(TempFFmpeg, Resources.ffmpeg);
 		}
 
-		public static void Convert(string input, string output) {
+		public static bool Convert(string input, string output) {
 			/*
 			 * Note: From version 1.4, TExtract uses a special version of the
 			 * ffmpeg executable configured with the following options:
@@ -55,13 +55,11 @@ namespace QuickWaveBank.Extracting {
 
 			List<string> command = new List<string>();
 			string arguments =
-				"-i" + " " +
-				"\"" + Path.GetFullPath(input) + "\" " +
-				"-acodec" + " " +
-				"pcm_s16le" + " " +
-				"-nostdin" + " " +
-				"-ab" + " " +
-				"128k" + " " +
+				"-i \"" + Path.GetFullPath(input) + "\" " +
+				"-acodec pcm_s16le " +
+				"-nostdin " +
+				"-ab 128k " +
+				"-y " +
 				"\"" + Path.GetFullPath(output) + "\"";
 
 			ProcessStartInfo start = new ProcessStartInfo();
@@ -71,6 +69,7 @@ namespace QuickWaveBank.Extracting {
 
 			Process process = Process.Start(start);
 			process.WaitForExit();
+			return (process.ExitCode == 0);
 		}
 	}
 }

@@ -76,5 +76,31 @@ namespace QuickWaveBank.Util {
 
 		private const int SW_RESTORE = 9;
 		private const int SW_HIDE = 0;
+
+		/**<summary>Sets an enum's flag.</summary>*/
+		public static TEnum SetFlag<TEnum>(this Enum enumValue, TEnum flag, bool set = true)
+			where TEnum : struct, IComparable, IFormattable, IConvertible {
+			Type underlyingType = Enum.GetUnderlyingType(enumValue.GetType());
+
+			// note: AsInt mean: math integer vs enum (not the c# int type)
+			dynamic valueAsInt = Convert.ChangeType(enumValue, underlyingType);
+			dynamic flagAsInt = Convert.ChangeType(flag, underlyingType);
+			if (set)
+				valueAsInt |= flagAsInt;
+			else
+				valueAsInt &= ~flagAsInt;
+			return (TEnum)valueAsInt;
+		}
+		/**<summary>Unsets an enum's flag.</summary>*/
+		public static TEnum UnsetFlag<TEnum>(this Enum enumValue, TEnum flag)
+			where TEnum : struct, IComparable, IFormattable, IConvertible {
+			Type underlyingType = Enum.GetUnderlyingType(enumValue.GetType());
+
+			// note: AsInt mean: math integer vs enum (not the c# int type)
+			dynamic valueAsInt = Convert.ChangeType(enumValue, underlyingType);
+			dynamic flagAsInt = Convert.ChangeType(flag, underlyingType);
+			valueAsInt &= ~flagAsInt;
+			return (TEnum)valueAsInt;
+		}
 	}
 }

@@ -32,5 +32,14 @@
     <Setting Name="Muted" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">False</Value>
     </Setting>
+    <Setting Name="ConvertOption" Type="System.String" Scope="User">
+      <Value Profile="(Default)">Ask</Value>
+    </Setting>
+    <Setting Name="LastFolderBrowser" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="SaveConfirmation" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">True</Value>
+    </Setting>
   </Settings>
 </SettingsFile>

@@ -141,7 +141,7 @@ namespace QuickWaveBank.Windows {
 			this.Width = Math.Max(minWidth, textBlockMessage.ActualWidth + 60);
 			this.Height += textBlockMessage.ActualHeight - 16;
 
-			#region Load Message Icons
+			#region Load Message Sounds
 			switch (icon) {
 			case MessageIcon.Info:		SystemSounds.Asterisk.Play(); break;
 			case MessageIcon.Question:	SystemSounds.Asterisk.Play(); break;

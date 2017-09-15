@@ -142,5 +142,41 @@ namespace QuickWaveBank.Properties {
                 this["Muted"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("Ask")]
+        public string ConvertOption {
+            get {
+                return ((string)(this["ConvertOption"]));
+            }
+            set {
+                this["ConvertOption"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string LastFolderBrowser {
+            get {
+                return ((string)(this["LastFolderBrowser"]));
+            }
+            set {
+                this["LastFolderBrowser"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool SaveConfirmation {
+            get {
+                return ((bool)(this["SaveConfirmation"]));
+            }
+            set {
+                this["SaveConfirmation"] = value;
+            }
+        }
     }
 }
