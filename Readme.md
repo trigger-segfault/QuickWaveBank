@@ -1,16 +1,16 @@
 # Quick Wave Bank ![AppIcon](http://i.imgur.com/kFThU0Z.png)
 A quick and easy tool for creating Xact Wave Banks for use in games like Terraria. Also comes with extraction capabilities. Save lists of wave files for use with Wave Bank creation.
 
-![Window Preview](http://i.imgur.com/MMTTIJU.png)
+![Window Preview](https://i.imgur.com/8JE22aX.png)
 
 ### [Wiki](https://github.com/trigger-death/QuickWaveBank/wiki) | [Credits](https://github.com/trigger-death/QuickWaveBank/wiki/Credits) | [Image Album](http://imgur.com/a/9K2vT)
 
-### [![Get Quick Wave Bank](http://i.imgur.com/aAEqIV1.png)](https://github.com/trigger-death/QuickWaveBank/releases/tag/1.0.0.2)
+### [![Get Quick Wave Bank](http://i.imgur.com/aAEqIV1.png)](https://github.com/trigger-death/QuickWaveBank/releases/tag/1.0.1.0)
 
 ## About
 
 * **Created By:** Robert Jordan
-* **Version:** 1.0.0.2 (Hotfix)
+* **Version:** 1.0.1.0
 * **Language:** C#, WPF
 
 ## Requirements for Running
