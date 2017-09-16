@@ -228,9 +228,9 @@
                 <Button x:Name="buttonSaveList" Content="Save List" HorizontalAlignment="Right" Margin="0,0,10,10" VerticalAlignment="Bottom" Width="75" Click="OnSaveWaveList" ToolTip="Save a list of audio track files."/>
             </Grid>
         </DockPanel>
-        <Grid x:Name="gridBuilding" Background="#CCF9F9F9" Visibility="Hidden">
+        <Grid x:Name="gridBuilding" Background="#CCF9F9F9" Visibility="Visible">
             <StackPanel VerticalAlignment="Center" Background="#FFFF9A56">
-                <Label x:Name="labelBuilding" Content="Building Wave Bank" VerticalContentAlignment="Center" FontSize="16" Foreground="White" Margin="0,12,0,5" HorizontalAlignment="Center" Padding="30,5,5,5" Width="206"/>
+                <Label x:Name="labelBuilding" Content="Building Wave Bank" VerticalContentAlignment="Center" FontSize="16" Foreground="White" Margin="0,12,0,5" HorizontalAlignment="Center" Padding="50,5,0,5" Width="250"/>
 
                 <StackPanel VerticalAlignment="Center" Orientation="Horizontal" HorizontalAlignment="Center">
                     <Button Content="Cancel" HorizontalAlignment="Center" Margin="0,0,10,0" Width="75" Click="OnCancelBuildProcess" VerticalAlignment="Center"/>

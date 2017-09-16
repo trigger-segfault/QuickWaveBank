@@ -236,6 +236,12 @@ namespace QuickWaveBank.Xap {
 			}
 			return false;
 		}
+		public static string RemoveFormatCharacters(string s) {
+			foreach (char specialChar in FormatCharacters) {
+				s = s.Replace(new string(specialChar, 1), "");
+			}
+			return s;
+		}
 		/**<summary>Gets if the character is a format character.</summary>*/
 		public static bool IsFormatCharacter(char c) {
 			foreach (char specialChar in FormatCharacters) {
