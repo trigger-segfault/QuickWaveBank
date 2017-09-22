@@ -46,7 +46,7 @@ namespace BuildConsole {
 			);
 
 			ProcessStartInfo start = new ProcessStartInfo();
-			start.FileName = Path.Combine(Path.GetTempPath(), "QuickWaveBank", "XactBld3.exe");
+			start.FileName = TempXactBld;
 			start.Arguments = "/X:REPORT /X:HEADER /X:SOUNDBANK /X:CUELIST /WIN32 /F \"" + TempProjectFile + "\"";
 			start.UseShellExecute = false;
 			Process process = Process.Start(start);
