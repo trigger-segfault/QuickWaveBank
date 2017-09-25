@@ -5,12 +5,12 @@ A quick and easy tool for creating Xact Wave Banks for use in games like Terrari
 
 ### [Wiki](https://github.com/trigger-death/QuickWaveBank/wiki) | [Credits](https://github.com/trigger-death/QuickWaveBank/wiki/Credits) | [Image Album](http://imgur.com/a/9K2vT)
 
-### [![Get Quick Wave Bank](http://i.imgur.com/aAEqIV1.png)](https://github.com/trigger-death/QuickWaveBank/releases/tag/1.0.1.0)
+### [![Get Quick Wave Bank](http://i.imgur.com/aAEqIV1.png)](https://github.com/trigger-death/QuickWaveBank/releases/tag/1.0.2.2)
 
 ## About
 
 * **Created By:** Robert Jordan
-* **Version:** 1.0.1.0
+* **Version:** 1.0.2.2
 * **Language:** C#, WPF
 
 ## Requirements for Running
@@ -18,6 +18,7 @@ A quick and easy tool for creating Xact Wave Banks for use in games like Terrari
 * Windows 7 or later
 
 ## Requirements for Source Code
+* Extended.Wpf.Toolkit | [NuGet Package](https://www.nuget.org/packages/Extended.Wpf.Toolkit/)
 * Place *XactBld3.exe* from XNA Game Studio 4.0 in QuickWaveBank's Resources folder.
 * BuildConsole must be manually rebuilt after changes since it's only linked to QuickWaveBank by resource.
 
