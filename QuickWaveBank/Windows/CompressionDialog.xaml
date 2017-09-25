@@ -5,8 +5,8 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:QuickWaveBank.Controls"
         mc:Ignorable="d"
-        Title="Wave Compression" Height="196" Width="200" Icon="/QuickWaveBank;component/Resources/Icons/Compression.png" ShowInTaskbar="False" ResizeMode="NoResize" Loaded="OnWindowLoaded" WindowStartupLocation="CenterOwner">
-    <Grid>
+        Title="Wave Compression" Icon="/QuickWaveBank;component/Resources/Icons/Compression.png" ShowInTaskbar="False" ResizeMode="NoResize" Loaded="OnWindowLoaded" WindowStartupLocation="CenterOwner" SizeToContent="WidthAndHeight">
+    <Grid Height="162" Width="200">
         <Label Content="Format" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Padding="0,5,5,5"/>
         <ComboBox x:Name="comboBoxFormat" Margin="10,36,10,0" VerticalAlignment="Top" SelectionChanged="OnFormatChanged"/>
         

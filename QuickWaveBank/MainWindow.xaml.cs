@@ -147,8 +147,8 @@ namespace QuickWaveBank {
 			if (!Directory.Exists(TempConverting)) {
 				Directory.CreateDirectory(TempConverting);
 			}
-			EmbeddedApps.ExtractEmbeddedExe(TempXactBld, Properties.Resources.XactBld3);
-			EmbeddedApps.ExtractEmbeddedExe(TempBuildConsole, Properties.Resources.BuildConsole);
+			EmbeddedResources.Extract(TempXactBld, Properties.Resources.XactBld3);
+			EmbeddedResources.Extract(TempBuildConsole, "BuildConsole.exe");
 
 			// Setup the wave list
 			dropManager = new ListViewDragDropManager<ListViewItem>();
@@ -184,7 +184,10 @@ namespace QuickWaveBank {
 			}
 			
 			// Disable drag/drop text in textboxes so you can scroll their contents easily
-			DataObject.AddCopyingHandler(textBoxOutput, (sender, e) => { if (e.IsDragDrop) e.CancelCommand(); });
+			DataObject.AddCopyingHandler(textBoxOutput, OnTextBoxCancelDrag);
+
+			// Remove quotes from "Copy Path" command on paste
+			DataObject.AddPastingHandler(textBoxOutput, OnTextBoxQuotesPaste);
 
 			LoadConfig();
 			UpdateTitle();
@@ -313,6 +316,24 @@ namespace QuickWaveBank {
 		private void OnWindowResized(object sender, SizeChangedEventArgs e) {
 			UpdateListViewItemRange(0, waveListViewItems.Count - 1);
 		}
+		private void OnPreviewMouseDown(object sender, MouseButtonEventArgs e) {
+			// Make text boxes lose focus on click away
+			FocusManager.SetFocusedElement(this, this);
+		}
+		private void OnTextBoxCancelDrag(object sender, DataObjectCopyingEventArgs e) {
+			if (e.IsDragDrop)
+				e.CancelCommand();
+		}
+		private void OnTextBoxQuotesPaste(object sender, DataObjectPastingEventArgs e) {
+			var isText = e.SourceDataObject.GetDataPresent(DataFormats.UnicodeText, true);
+			if (!isText) return;
+
+			var text = e.SourceDataObject.GetData(DataFormats.UnicodeText) as string;
+			if (text.StartsWith("\"") || text.EndsWith("\"")) {
+				text = text.Trim('"');
+				Clipboard.SetText(text);
+			}
+		}
 
 		#endregion
 		//======= WAVE MANAGEMENT ========
@@ -333,9 +354,6 @@ namespace QuickWaveBank {
 			}
 			reader.Close();
 			AddWaves(files.ToArray(), true, true);
-			//if (AddWaves(files.ToArray(), true, true)) {
-			//TriggerMessageBox.Show(this, MessageIcon.Warning, "Some wave file paths have invalid characters. Paths cannot contain: '=', ';', '{', or '}'.", "Invalid Path");
-			//}
 		}
 		/**<summary>Saves the wave list.</summary>*/
 		private void SaveWaveList(string filepath) {

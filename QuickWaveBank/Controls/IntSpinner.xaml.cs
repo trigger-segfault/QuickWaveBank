@@ -13,6 +13,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using Xceed.Wpf.Toolkit;
 
 namespace QuickWaveBank.Controls {
 	/**<summary>Signifies an numeric value change.</summary>*/
@@ -61,7 +62,8 @@ namespace QuickWaveBank.Controls {
 		/**<summary>Constructs the numeric spinner.</summary>*/
 		public IntSpinner() {
 			InitializeComponent();
-			
+
+			UpdateSpinner();
 			UpdateTextBox();
 		}
 
@@ -82,7 +84,7 @@ namespace QuickWaveBank.Controls {
 		#endregion
 		//========== PROPERTIES ==========
 		#region Properties
-		
+
 		/**<summary>The value used when a number can't be parsed.</summary>*/
 		public int ErrorValue {
 			get { return errorValue; }
@@ -101,6 +103,7 @@ namespace QuickWaveBank.Controls {
 				if (number != value) {
 					int oldValue = number;
 					number = value;
+					UpdateSpinner();
 					UpdateTextBox();
 					RaiseEvent(new ValueChangedEventArgs<int>(IntSpinner.ValueChangedEvent, oldValue, number));
 				}
@@ -115,6 +118,8 @@ namespace QuickWaveBank.Controls {
 				maximum = value;
 				if (number > maximum)
 					Value = maximum;
+				else
+					UpdateSpinner();
 				if (errorValue > maximum)
 					errorValue = maximum;
 			}
@@ -128,6 +133,8 @@ namespace QuickWaveBank.Controls {
 				minimum = value;
 				if (number < minimum)
 					Value = minimum;
+				else
+					UpdateSpinner();
 				if (errorValue < minimum)
 					errorValue = minimum;
 			}
@@ -156,7 +163,13 @@ namespace QuickWaveBank.Controls {
 		#endregion
 		//=========== HELPERS ============
 		#region Helpers
-			
+
+		/**<summary>Updates the state of the spinner.</summary>*/
+		private void UpdateSpinner() {
+			spinner.ValidSpinDirection = ValidSpinDirections.None;
+			spinner.ValidSpinDirection |= (number != maximum ? ValidSpinDirections.Increase : ValidSpinDirections.None);
+			spinner.ValidSpinDirection |= (number != minimum ? ValidSpinDirections.Decrease : ValidSpinDirections.None);
+		}
 		/**<summary>Updates the state of the textbox.</summary>*/
 		private void UpdateTextBox() {
 			int caretIndex = textBox.CaretIndex;
@@ -253,6 +266,7 @@ namespace QuickWaveBank.Controls {
 					}
 				}
 				if (number != oldValue) {
+					UpdateSpinner();
 					RaiseEvent(new ValueChangedEventArgs<int>(IntSpinner.ValueChangedEvent, oldValue, number));
 				}
 			}
@@ -296,10 +310,24 @@ namespace QuickWaveBank.Controls {
 				}
 			}
 			if (number != oldValue) {
+				UpdateSpinner();
 				RaiseEvent(new ValueChangedEventArgs<int>(IntSpinner.ValueChangedEvent, oldValue, number));
 			}
-			
+
 			UpdateTextBoxError();
+		}
+		private void OnSpinnerSpin(object sender, SpinEventArgs e) {
+			int oldValue = number;
+			if (e.Direction == SpinDirection.Increase)
+				number = Math.Min(maximum, number + increment);
+			else if (e.Direction == SpinDirection.Decrease)
+				number = Math.Max(minimum, number - increment);
+			if (number != oldValue) {
+				UpdateSpinner();
+				UpdateTextBox();
+				textBox.CaretIndex = textBox.Text.Length;
+				RaiseEvent(new ValueChangedEventArgs<int>(IntSpinner.ValueChangedEvent, oldValue, number));
+			}
 		}
 		private void OnGotFocus(object sender, RoutedEventArgs e) {
 			this.MoveFocus(new TraversalRequest(FocusNavigationDirection.First));

@@ -2,10 +2,9 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d"
-        Title="About Quick Wave Bank" Height="312" Width="400" Background="#FFECEEF1" WindowStartupLocation="CenterOwner" ResizeMode="NoResize" ShowInTaskbar="False" Icon="/Resources/Icons/About.png" SnapsToDevicePixels="True" UseLayoutRounding="True">
-    <Grid>
+        Title="About Quick Wave Bank" Background="#FFF0F0F0" WindowStartupLocation="CenterOwner" ResizeMode="NoResize" ShowInTaskbar="False" Icon="/Resources/Icons/About.png" SnapsToDevicePixels="True" UseLayoutRounding="True" SizeToContent="WidthAndHeight" Loaded="OnWindowLoaded">
+
+    <Grid x:Name="clientArea" Width="384" Height="270">
         <Rectangle Fill="#FF72B8D8" HorizontalAlignment="Left" Height="103" Margin="-71,-16,0,0" VerticalAlignment="Top" Width="211" RenderTransformOrigin="0.5,0.5">
             <Rectangle.RenderTransform>
                 <TransformGroup>
@@ -31,9 +30,9 @@
             </Grid>
         </GroupBox>
         <GroupBox Header="Description" Margin="10,143,10,40" BorderBrush="#FFA9B1B6">
-            <TextBlock TextWrapping="WrapWithOverflow" Text="A quick and easy tool for creating Xact Wave Banks for use in games like Terraria. Also comes with extraction capabilities." Margin="4" Padding="4"/>
+            <TextBlock x:Name="textBlockDescription" TextWrapping="WrapWithOverflow" Text="A quick and easy tool for creating Xact Wave Banks for use in games like Terraria. Also comes with extraction capabilities." Margin="4" Padding="4" VerticalAlignment="Top"/>
         </GroupBox>
-        <Button Content="Close" HorizontalAlignment="Right" Margin="0,0,10,10" VerticalAlignment="Bottom" Width="80" IsDefault="True" Click="OnCloseClicked"/>
-
+        
+        <Button Content="Close" HorizontalAlignment="Right" Margin="0,0,10,10" VerticalAlignment="Bottom" Width="80" IsDefault="True" IsCancel="True"/>
     </Grid>
 </Window>

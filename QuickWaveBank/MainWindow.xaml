@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:QuickWaveBank"
         mc:Ignorable="d"
-        Title="Quick Wave Bank" Height="440" Width="400" Background="#FFF0F0F0" Icon="App.ico" Closing="OnWindowClosing" Loaded="OnWindowLoaded" SnapsToDevicePixels="True" UseLayoutRounding="True" MinWidth="400" MinHeight="340" SizeChanged="OnWindowResized">
+        Title="Quick Wave Bank" Height="440" Width="400" Background="#FFF0F0F0" Icon="App.ico" Closing="OnWindowClosing" Loaded="OnWindowLoaded" SnapsToDevicePixels="True" UseLayoutRounding="True" MinWidth="400" MinHeight="340" SizeChanged="OnWindowResized" PreviewMouseDown="OnPreviewMouseDown">
     <Window.Resources>
         <Style TargetType="{x:Type ListView}">
             <Style.Resources>
@@ -164,8 +164,8 @@
             </Menu>
             <Grid>
                 <Label Content="Output File" HorizontalAlignment="Left" Margin="10,5,0,0" VerticalAlignment="Top" Padding="0,5,5,5"/>
-                <TextBox x:Name="textBoxOutput" Height="23" Margin="10,31,40,0" VerticalAlignment="Top" IsHitTestVisible="True" IsTabStop="False" AllowDrop="True" ScrollViewer.CanContentScroll="True" TextChanged="OnOutputFileChanged"/>
-                <Button HorizontalAlignment="Right" Margin="0,31,10,0" VerticalAlignment="Top" Width="22" Height="22" Padding="0" Grid.IsSharedSizeScope="True" ToolTip="Select Output File" Focusable="False" IsTabStop="False" Click="OnSelectOutputFile">
+                <TextBox x:Name="textBoxOutput" Height="23" Margin="10,31,42,0" VerticalAlignment="Top" IsHitTestVisible="True" IsTabStop="False" AllowDrop="True" ScrollViewer.CanContentScroll="True" TextChanged="OnOutputFileChanged"/>
+                <Button HorizontalAlignment="Right" Margin="0,31,10,0" VerticalAlignment="Top" Width="23" Height="23" Padding="0" Grid.IsSharedSizeScope="True" ToolTip="Select Output File" Focusable="False" IsTabStop="False" Click="OnSelectOutputFile">
                     <Image Height="16" Width="16" Source="Resources/Icons/Browse.png" IsHitTestVisible="False"/>
                 </Button>
 
@@ -228,7 +228,7 @@
                 <Button x:Name="buttonSaveList" Content="Save List" HorizontalAlignment="Right" Margin="0,0,10,10" VerticalAlignment="Bottom" Width="75" Click="OnSaveWaveList" ToolTip="Save a list of audio track files."/>
             </Grid>
         </DockPanel>
-        <Grid x:Name="gridBuilding" Background="#CCF9F9F9" Visibility="Visible">
+        <Grid x:Name="gridBuilding" Background="#CCF9F9F9" Visibility="Hidden">
             <StackPanel VerticalAlignment="Center" Background="#FFFF9A56">
                 <Label x:Name="labelBuilding" Content="Building Wave Bank" VerticalContentAlignment="Center" FontSize="16" Foreground="White" Margin="0,12,0,5" HorizontalAlignment="Center" Padding="50,5,0,5" Width="250"/>
 

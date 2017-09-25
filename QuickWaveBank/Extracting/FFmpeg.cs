@@ -30,35 +30,38 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using QuickWaveBank.Properties;
+using QuickWaveBank.Util;
 
 namespace QuickWaveBank.Extracting {
 	public static class FFmpeg {
-		// Use TConvert's path since it's already established. No reason to have duplicate files
+		//========== CONSTANTS ===========
+		#region Constants
+
+		/**<summary>The path of the temporary executable.</summary>*/
 		private static readonly string TempFFmpeg = Path.Combine(Path.GetTempPath(), "TriggersToolsGames", "ffmpeg.exe");
 
+		#endregion
+		//========= CONSTRUCTORS =========
+		#region Constructors
+
+		/**<summary>Extracts FFmpeg.</summary>*/
 		static FFmpeg() {
-			EmbeddedApps.ExtractEmbeddedExe(TempFFmpeg, Resources.ffmpeg);
+			EmbeddedResources.Extract(TempFFmpeg, Resources.ffmpeg);
 		}
 
-		public static bool Convert(string input, string output) {
-			/*
-			 * Note: From version 1.4, TExtract uses a special version of the
-			 * ffmpeg executable configured with the following options:
-			 * --disable-everything --enable-muxer=wav --enable-encoder=pcm_s16le
-			 * --enable-demuxer=xwma --enable-decoder=wmav2
-			 * --enable-protocol=file --enable-filter=aresample
-			 * It can therefore not resample to another format without
-			 * recompilation with appropriate options. The reason behind this
-			 * is that the original weighted about 27 megabytes, whereas the new
-			 * one weights only 1,5 megabytes.
-			 */
+		#endregion
+		//========== CONVERTING ==========
+		#region Converting
 
+		/**<summary>Converts the specified input file to wave format.</summary>*/
+		public static bool Convert(string input, string output) {
 			List<string> command = new List<string>();
 			string arguments =
 				"-i \"" + Path.GetFullPath(input) + "\" " +
 				"-acodec pcm_s16le " +
 				"-nostdin " +
 				"-ab 128k " +
+				"-map_metadata -1 " +
 				"-y " +
 				"\"" + Path.GetFullPath(output) + "\"";
 
@@ -71,5 +74,7 @@ namespace QuickWaveBank.Extracting {
 			process.WaitForExit();
 			return (process.ExitCode == 0);
 		}
+
+		#endregion
 	}
 }

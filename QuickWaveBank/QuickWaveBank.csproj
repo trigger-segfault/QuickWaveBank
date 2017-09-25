@@ -55,6 +55,10 @@
     <Reference Include="WindowsBase" />
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
+    <Reference Include="Xceed.Wpf.Toolkit, Version=3.1.0.0, Culture=neutral, PublicKeyToken=3e4669d2f30244f4, processorArchitecture=MSIL">
+      <HintPath>..\packages\Extended.Wpf.Toolkit.3.1\lib\net40\Xceed.Wpf.Toolkit.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <ApplicationDefinition Include="App.xaml">
@@ -73,7 +77,7 @@
     <Compile Include="Extracting\FFmpeg.cs" />
     <Compile Include="Extracting\TerrariaLocator.cs" />
     <Compile Include="Extracting\WaveBankExtractor.cs" />
-    <Compile Include="Util\EmbeddedApps.cs" />
+    <Compile Include="Util\EmbeddedResources.cs" />
     <Compile Include="Util\Extensions.cs" />
     <Compile Include="Windows\AboutWindow.xaml.cs">
       <DependentUpon>AboutWindow.xaml</DependentUpon>
@@ -163,6 +167,7 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+    <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
@@ -195,9 +200,6 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="App.ico" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="..\BuildConsole\bin\DebugRelease\BuildConsole.exe" />
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Resources\Icons\AppError.ico" />
@@ -322,6 +324,12 @@
   <ItemGroup>
     <Resource Include="Resources\Icons\SaveConfirmation.png" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\BuildConsole\BuildConsole.csproj">
+      <Project>{77dc12fa-d6fa-4a42-912e-0d8e7e4aa83f}</Project>
+      <Name>BuildConsole</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PreBuildEvent>
@@ -334,4 +342,19 @@
   <Target Name="AfterBuild">
   </Target>
   -->
+  <!-- https://gist.github.com/thoemmi/3724333 -->
+  <Target Name="EmbedReferencedAssemblies" AfterTargets="ResolveAssemblyReferences">
+    <ItemGroup>
+      <!-- get list of assemblies to copy -->
+      <AssembliesToEmbed Include="@(ReferenceCopyLocalPaths)" Condition="'%(Filename)%(Extension)' == 'BuildConsole.exe'" />
+      <AssembliesToEmbed Include="@(ReferenceCopyLocalPaths)" Condition="'%(Filename)%(Extension)' == 'Xceed.Wpf.Toolkit.dll'" />
+      <!-- add these assemblies to the list of embedded resources -->
+      <EmbeddedResource Include="@(AssembliesToEmbed)">
+        <LogicalName>%(Filename)%(Extension)</LogicalName>
+      </EmbeddedResource>
+      <!-- no need to copy the assmblies locally anymore -->
+      <ReferenceCopyLocalPaths Remove="@(AssembliesToEmbed)" />
+    </ItemGroup>
+    <Message Importance="high" Text="Embedding: @(AssembliesToEmbed->'%(Filename)%(Extension)', ', ')" />
+  </Target>
 </Project>
