@@ -937,7 +937,7 @@ namespace QuickWaveBank {
 			dialog.Title = "Choose Wave Bank";
 			dialog.Filter = "Wave Banks|*.xwb|All Files|*.*";
 			dialog.FilterIndex = 0;
-			dialog.InitialDirectory = TerrariaLocator.TerrariaContentDirectory;
+			dialog.InitialDirectory = TerrariaLocator.TerrariaContentDirectory ?? "";
 			var result = dialog.ShowDialog(this);
 			if (result.HasValue && result.Value) {
 				string file = dialog.FileName;
