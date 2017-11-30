@@ -105,7 +105,7 @@ namespace QuickWaveBank.Extracting {
 				string name = TrackNames[index];
 				if (name.Length >= 3) {
 					if (char.IsDigit(name[0]) && char.IsDigit(name[1]) && (name[2] == '_' || name[2] == ' '))
-						name = name.Substring(3).TrimWhitespace();
+						name = name.Substring(3).Trim();
 				}
 				return name;
 			}
@@ -131,7 +131,7 @@ namespace QuickWaveBank.Extracting {
 				ReadWaveBankList(path);
 				return;
 			}
-			if (TerrariaLocator.TerrariaContentDirectory != "") {
+			if (!string.IsNullOrEmpty(TerrariaLocator.TerrariaContentDirectory)) {
 				path = Path.Combine(
 					Path.GetDirectoryName(TerrariaLocator.TerrariaContentDirectory),
 					WaveBankList

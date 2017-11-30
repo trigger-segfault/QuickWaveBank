@@ -10,10 +10,6 @@ using System.Threading.Tasks;
 namespace QuickWaveBank.Util {
 	/**<summary>A collection of useful extensions.</summary>*/
 	public static class Extensions {
-		/**<summary>Trims whitespace off of a string.</summary>*/
-		public static string TrimWhitespace(this string s) {
-			return s.Trim(' ', '\t', '\r', '\n');
-		}
 		/**<summary>Fills an array with a value.</summary>*/
 		public static void Fill<T>(this T[] array, T with) {
 			for (int i = 0; i < array.Length; i++) {

@@ -170,7 +170,7 @@ namespace QuickWaveBank.Xap {
 			for (int i = 0; i < text.Length; i++) {
 				char c = text[i];
 				if (IsFormatCharacter(c)) {
-					token = text.Substring(0, i).TrimWhitespace();
+					token = text.Substring(0, i).Trim();
 					if (token.Length > 0)
 						tokens.Add(token);
 					tokens.Add(new string(c, 1));
@@ -183,7 +183,7 @@ namespace QuickWaveBank.Xap {
 				}
 			}
 
-			token = text.TrimWhitespace();
+			token = text.Trim();
 			if (token.Length > 0)
 				tokens.Add(token);
 
