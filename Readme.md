@@ -5,6 +5,7 @@
 [![Total Downloads](https://img.shields.io/github/downloads/trigger-death/QuickWaveBank/total.svg?style=flat)](https://github.com/trigger-death/QuickWaveBank/releases)
 [![Creation Date](https://img.shields.io/badge/created-september%202017-A642FF.svg?style=flat)](https://github.com/trigger-death/QuickWaveBank/commit/bf94593dac379d7f182622f2c3b1e73e876f2d95)
 [![Terraria Forums](https://img.shields.io/badge/terraria-forums-28A828.svg?style=flat)](https://forums.terraria.org/index.php?threads/61813/)
+[![Discord](https://img.shields.io/discord/436949335947870238.svg?style=flat&logo=discord&label=chat&colorB=7389DC&link=https://discord.gg/vB7jUbY)](https://discord.gg/vB7jUbY)
 
 A quick and easy tool for creating Xact Wave Banks for use in games like Terraria. Also comes with extraction capabilities. Save lists of wave files for use with Wave Bank creation.
 
