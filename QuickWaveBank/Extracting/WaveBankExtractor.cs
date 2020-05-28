@@ -53,7 +53,7 @@ namespace QuickWaveBank.Extracting {
 			Label_RIFF.Length + 4 + Label_WAVE.Length + Label_fmt.Length +
 			4 + 2 + 2 + 4 + 4 + 2 + 2 + Label_data.Length + 4;
 
-		private const string WaveBankList = "TrackList.txt";
+		private const string WaveBankList = "QuickWaveBank_TrackNames.txt";
 
 		/** Mapping of music wave bank indexes to their names */
 		public static string[] TrackNames = {
@@ -62,7 +62,7 @@ namespace QuickWaveBank.Extracting {
 			"03 Overworld Day",
 			"04 Boss 1",
 			"05 Title Screen",
-			"06 Jungle",
+			"06 Jungle Day",
 			"07 Corruption",
 			"08 Hallow",
 			"09 Underground Corruption",
@@ -71,20 +71,20 @@ namespace QuickWaveBank.Extracting {
 			"12 Underground",
 			"13 Boss 3",
 			"14 Snow",
-			"15 Space",
+			"15 Space Night",
 			"16 Crimson",
 			"17 Boss 4",
 			"18 Alt Overworld Day",
-			"19 Rain",
+			"19 Rainy Day",
 			"20 Underground Snow",
 			"21 Desert",
-			"22 Ocean",
+			"22 Ocean Day",
 			"23 Dungeon",
 			"24 Plantera",
 			"25 Boss 5",
 			"26 Temple",
 			"27 Eclipse",
-			"28 Rain Ambience",
+			"28 Rain sound effect",
 			"29 Mushrooms",
 			"30 Pumpkin Moon",
 			"31 Alt Underground",
@@ -97,7 +97,54 @@ namespace QuickWaveBank.Extracting {
 			"38 Moon Lord",
 			"39 Goblin Invasion",
 			"40 Sandstorm",
-			"41 Old One's Army"
+			"41 Old Ones Army",
+			"42 Space Day",
+			"43 Ocean Night",
+			"44 Windy Day",
+			"45 Wind sound effect",
+			"46 Town Day",
+			"47 Town Night",
+			"48 Slime Rain",
+			"49 Overworld Day Remix",
+			"50 Journeys End Intro",
+			"51 Journeys End",
+			"52 Storm",
+			"53 Graveyard",
+			"54 Underground Jungle",
+			"55 Jungle Night",
+			"56 Queen Slime",
+			"57 Empress of Light",
+			"58 Duke Fishron",
+			"59 Morning Rain",
+			"60 Alt Title Screen",
+			"61 Underground Desert",
+			"62 Otherworld Rain",
+			"63 Otherworld Overworld Day",
+			"64 Otherworld Overworld Night",
+			"65 Otherworld Underground",
+			"66 Otherworld Desert",
+			"67 Otherworld Ocean",
+			"68 Otherworld Mushrooms",
+			"69 Otherworld Dungeon",
+			"70 Otherworld Space",
+			"71 Otherworld Hell",
+			"72 Otherworld Snow",
+			"73 Otherworld Corruption",
+			"74 Otherworld Underground Corruption",
+			"75 Otherworld Crimson",
+			"76 Otherworld Underground Crimson",
+			"77 Otherworld Underground Snow",
+			"78 Otherworld Underground Hallow",
+			"79 Otherworld Eerie",
+			"80 Otherworld Boss 2",
+			"81 Otherworld Boss 1",
+			"82 Otherworld Invasion",
+			"83 Otherworld Lunar Event",
+			"84 Otherworld Moon Lord",
+			"85 Otherworld Plantera",
+			"86 Otherworld Jungle",
+			"87 Otherworld Wall of Flesh",
+			"88 Otherworld Hallow"
 		};
 
 		public static string GetTrackName(int index) {
@@ -235,7 +282,7 @@ namespace QuickWaveBank.Extracting {
 
 			int playregion_offset = segmentOffsets[4];
 			for (int current_entry = 0; current_entry<EntryCount; current_entry++) {
-				String track = current_entry < TrackNames.Length ? TrackNames[current_entry] : (current_entry + 1) + " Unknown";
+				String track = current_entry < TrackNames.Length ? SanitizeFileName(TrackNames[current_entry], "_") : (current_entry + 1) + " Unknown";
 
 				Status("Extracting " + track);
 				Percentage(0.1f + (0.9f / EntryCount) * current_entry);
@@ -411,6 +458,54 @@ namespace QuickWaveBank.Extracting {
 			}
 			reader.Close();
 			return true;
+		}
+		
+		// Safety methods for people who who may...
+		//  A) Put very dangerous characters in their filenames
+		//  B) Rename some random binary file to "QuickWaveBank_TrackNames.txt", (the horror!)
+		private static string SanitizeFileName(string s, string replaceCharsWith) {
+			StringBuilder sanitized = new StringBuilder();
+			SanitizeFileName(sanitized, replaceCharsWith);
+			return sanitized.ToString();
+		}
+		private static StringBuilder SanitizeFileName(StringBuilder sanitized, string replaceCharsWith) {
+			// Sanitize invalid Filename/filepath characters
+			foreach (char specialChar in Path.GetInvalidFileNameChars()) {
+				sanitized.Replace(new string(specialChar, 1), replaceCharsWith);
+			}
+			// We don't want duplicate spaces...?
+			sanitized.Replace("  ", " ");
+
+			// Avoid environment variable evaluation (Windows)
+			sanitized.Replace("%", replaceCharsWith);
+
+			// Huh... no StringBuilder.Trim()
+			// Trim beginning and trailing ' ','.'
+			while (sanitized.Length > 0) {// TrimStart
+				char c = sanitized[0];
+				if (c != ' ' && c != '.')
+					break;
+				sanitized.Remove(0, 1);
+			}
+			while (sanitized.Length > 0) { // TrimEnd
+				char c = sanitized[sanitized.Length - 1];
+				if (c != ' ' && c != '.')
+					break;
+				sanitized.Remove(sanitized.Length - 1, 1);
+			}
+			
+			// Handle remaining control characters
+			for (int i = 0; i < sanitized.Length; i++) {
+				char c = sanitized[i];
+				// Control characters. NO!
+				if (c < (char)0x20 || c == (char) 0x7f) {
+					sanitized.Remove(i, 1);
+					sanitized.Insert(i, replaceCharsWith);
+					i += replaceCharsWith.Length - 1;  // -1 for removed [i]
+				}
+			}
+
+			return sanitized;
 		}
 	}
 }

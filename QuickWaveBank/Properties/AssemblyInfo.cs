@@ -12,7 +12,7 @@ using System.Windows;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Trigger's Tools & Games")]
 [assembly: AssemblyProduct("QuickWaveBank")]
-[assembly: AssemblyCopyright("Copyright © Robert Jordan 2017")]
+[assembly: AssemblyCopyright("Copyright © Robert Jordan 2020")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -51,8 +51,8 @@ using System.Windows;
 // You can specify all the values or you can default the Build and Revision Numbers 
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("1.0.2.3")]
-[assembly: AssemblyFileVersion("1.0.2.3")]
+[assembly: AssemblyVersion("1.0.3.0")]
+[assembly: AssemblyFileVersion("1.0.3.0")]
 [assembly: Guid("81CB3338-5599-449F-A2A4-2C37A245551F")]
 [assembly: NeutralResourcesLanguage("en-US")]
 

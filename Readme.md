@@ -18,7 +18,7 @@ A quick and easy tool for creating Xact Wave Banks for use in games like Terrari
 ## About
 
 * **Created By:** Robert Jordan
-* **Version:** 1.0.2.2
+* **Version:** 1.0.3.0
 * **Language:** C#, WPF
 
 ## Requirements for Running

@@ -699,10 +699,16 @@ namespace QuickWaveBank {
 		private void WriteXapWave(XapGroup waveBank, int index) {
 			XapGroup group = new XapGroup("Wave");
 			string waveFile = waveFiles[index];
-			group.AddVariable("Name", (index + 1).ToString("D2") + " " + XapFile.RemoveFormatCharacters(Path.GetFileNameWithoutExtension(waveFiles[index])));
+			//TODO: Is numbering each track really necessary for clarity?
+			string sanitizedName = XapFile.SanitizeString(Path.GetFileNameWithoutExtension(waveFile), "_", false, false, false);
+			group.AddVariable("Name", (index + 1).ToString("D2") + " " + sanitizedName);
+
 			// Use the temporary directory for converted files and files containing format characters
-			if (XapFile.ContainsFormatCharacter(waveFile) || Path.GetExtension(waveFile).ToLower() != ".wav")
-				waveFile = Path.Combine(Path.GetFileName(TempConverting), GetTempWavePath(index));
+			//FIXME: Currently forced to avoid potentially invalid wave file formats, and invalid non-ascii path characters
+			//if (XapFile.ContainsFormatCharacter(waveFile) || Path.GetExtension(waveFile).ToLower() != ".wav") {
+				// Relative path is essential for avoiding usernames with special characters
+				waveFile = GetTempWaveRelativePath(index);
+			//}
 			group.AddVariable("File", waveFile);
 			waveBank.AddGroup(group);
 		}
@@ -723,8 +729,15 @@ namespace QuickWaveBank {
 		//--------------------------------
 		#region Building
 
+		private string GetTempWaveFileName(int index) {
+			return "Track_" + (index+1).ToString("D2") + ".wav";
+		}
+		private string GetTempWaveRelativePath(int index) {
+			//TODO: Add TempConverting relative path as constant
+			return Path.Combine(Path.GetFileName(TempConverting), GetTempWaveFileName(index));
+		}
 		private string GetTempWavePath(int index) {
-			return Path.Combine(TempDirectory, "Converting", (index+1).ToString("D2") + ".wav");
+			return Path.Combine(TempConverting, GetTempWaveFileName(index));
 		}
 		private void OnBuild(object sender, RoutedEventArgs e) {
 			if (waveFiles.Count == 0) {
@@ -771,10 +784,11 @@ namespace QuickWaveBank {
 				for (int i = 0; i < waveFiles.Count; i++) {
 					string audioFile = waveFiles[i];
 					string waveFile = GetTempWavePath(i);
-					if (Path.GetExtension(audioFile).ToLower() != ".wav") {
+					//FIXME: Currently forced to avoid potentially invalid wave file formats, and invalid non-ascii path characters
+					//if (Path.GetExtension(audioFile).ToLower() != ".wav") {
 						if (!FFmpeg.Convert(audioFile, waveFile))
 							convertErrors.Add((i + 1).ToString() + " " + Path.GetFileName(audioFile));
-					}
+					/*}
 					else if (XapFile.ContainsFormatCharacter(audioFile)) {
 						// Use a temporary directory for files containing format characters in their paths
 						try {
@@ -783,7 +797,7 @@ namespace QuickWaveBank {
 						catch {
 							copyErrors.Add((i + 1).ToString() + " " + Path.GetFileName(audioFile));
 						}
-					}
+					}*/
 				}
 				List<LogError> errors = new List<LogError>();
 				if (convertErrors.Count > 0) {

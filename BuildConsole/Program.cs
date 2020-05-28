@@ -47,8 +47,10 @@ namespace BuildConsole {
 
 			ProcessStartInfo start = new ProcessStartInfo();
 			start.FileName = TempXactBld;
-			start.Arguments = "/X:REPORT /X:HEADER /X:SOUNDBANK /X:CUELIST /WIN32 /F \"" + TempProjectFile + "\"";
+			start.Arguments = "/X:REPORT /X:HEADER /X:SOUNDBANK /X:CUELIST /WIN32 /F " +
+					"\"" + Path.GetFileName(TempProjectFile) + "\""; //TODO: fix later with a proper constant (needed to avoid special characters in usernames)
 			start.UseShellExecute = false;
+			start.WorkingDirectory = TempDirectory;
 			Process process = Process.Start(start);
 			process.WaitForExit();
 

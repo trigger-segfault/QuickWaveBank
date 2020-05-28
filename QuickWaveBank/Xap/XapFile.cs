@@ -236,11 +236,61 @@ namespace QuickWaveBank.Xap {
 			}
 			return false;
 		}
-		public static string RemoveFormatCharacters(string s) {
+		/*public static string RemoveFormatCharacters(string s) {
 			foreach (char specialChar in FormatCharacters) {
 				s = s.Replace(new string(specialChar, 1), "");
 			}
 			return s;
+		}*/
+		public static string SanitizeString(string s, string replaceCharsWith, bool escapeControl, bool escapeUnicode, bool escapeBackslash) {
+			StringBuilder sanitized = new StringBuilder(s);
+			SanitizeString(sanitized, replaceCharsWith, escapeControl, escapeUnicode, escapeBackslash);
+			return sanitized.ToString();
+		}
+		public static StringBuilder SanitizeString(StringBuilder sanitized, string replaceCharsWith, bool escapeControl, bool escapeUnicode, bool escapeBackslash) {
+			// Escape backslashes before potentially inserting more
+			if (escapeBackslash) {
+				sanitized.Replace("\\", "\\\\");
+			}
+
+			// Sanitize Xap reserved characters
+			foreach (char specialChar in FormatCharacters) {
+				sanitized.Replace(new string(specialChar, 1), replaceCharsWith);
+			}
+
+			// Handle Xap illegal control characters
+			if (escapeControl) {
+				sanitized.Replace("\n", "\\n").Replace("\r", "\\r")
+						 .Replace("\a", "\\a").Replace("\b", "\\b")
+						 .Replace("\0", "\\0");
+			}
+			//else {} // handled in for loop
+
+			// Handle remaining control+Unicode characters
+			for (int i = 0; i < sanitized.Length; i++) {
+				char c = sanitized[i];
+				string replaced = null;
+				if (c < (char)0x20 || c == (char)0x7f) { // control
+					if (escapeControl)
+						replaced = string.Format("\\x{0:x2}", (int)c);
+					else
+						replaced = replaceCharsWith;
+				}
+				else if (sanitized[i] >= (char)0x80) {// non-ascii
+					if (escapeUnicode)
+						replaced = string.Format("\\u{0:x4}", (int)c);
+					else
+						replaced = replaceCharsWith;
+				}
+
+				if (replaced != null) { // do we need to replace?
+					sanitized.Remove(i, 1);
+					sanitized.Insert(i, replaced);
+					i += replaced.Length - 1;  // -1 for removed [i]
+				}
+			}
+
+			return sanitized;
 		}
 		/**<summary>Gets if the character is a format character.</summary>*/
 		public static bool IsFormatCharacter(char c) {
