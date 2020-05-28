@@ -744,6 +744,10 @@ namespace QuickWaveBank {
 				TriggerMessageBox.Show(this, MessageIcon.Warning, "You must add audio tracks before building.", "No Tracks");
 				return;
 			}
+			// Ensure converting directory exists before placing files there
+			if (!Directory.Exists(TempConverting)) {
+				Directory.CreateDirectory(TempConverting);
+			}
 			processThread = new Thread(() => {
 				WriteXapProject();
 
@@ -878,7 +882,12 @@ namespace QuickWaveBank {
 								// Success
 								try {
 									File.Copy(TempWaveBank, Config.OutputFile, true);
-									File.Delete(TempWaveBank);
+									try {
+										File.Delete(TempWaveBank);
+									}
+									catch (IOException) {
+										// File is in use? Arbitrary edge case
+									}
 									error = false;
 									var result = TriggerMessageBox.Show(this, MessageIcon.Info, "Wave Bank creation successful! Would you like to open the folder?", "Build Success", MessageBoxButton.YesNo);
 									if (result == MessageBoxResult.Yes)
@@ -901,10 +910,20 @@ namespace QuickWaveBank {
 					// Build process never started
 				}
 
-				// Cleanup temp converting wave files
-				DirectoryInfo di = new DirectoryInfo(TempConverting);
-				foreach (FileInfo file in di.GetFiles()) {
-					file.Delete();
+				try {
+					// Cleanup temp converting wave files
+					DirectoryInfo di = new DirectoryInfo(TempConverting);
+					foreach (FileInfo file in di.GetFiles()) {
+						try {
+							file.Delete();
+						}
+						catch (IOException) {
+							// it seems its already taken care of / or file in use. Arbitrary edge case
+						}
+					}
+				}
+				catch (IOException) {
+					// it seems its already taken care of. Arbitrary edge case
 				}
 				
 				gridWindow.IsEnabled = true;
