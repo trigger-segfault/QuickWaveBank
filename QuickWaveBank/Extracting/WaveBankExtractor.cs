@@ -282,7 +282,12 @@ namespace QuickWaveBank.Extracting {
 
 			int playregion_offset = segmentOffsets[4];
 			for (int current_entry = 0; current_entry<EntryCount; current_entry++) {
-				String track = current_entry < TrackNames.Length ? SanitizeFileName(TrackNames[current_entry], "_") : (current_entry + 1) + " Unknown";
+				string track = null;
+				if (current_entry < TrackNames.Length)
+					track = SanitizeFileName(TrackNames[current_entry], "_");
+				if (string.IsNullOrWhiteSpace(track))
+					track =  (current_entry + 1).ToString() + " Unknown";
+				//String track = current_entry < TrackNames.Length ? SanitizeFileName(TrackNames[current_entry], "_") : (current_entry + 1) + " Unknown";
 
 				Status("Extracting " + track);
 				Percentage(0.1f + (0.9f / EntryCount) * current_entry);
@@ -481,7 +486,7 @@ namespace QuickWaveBank.Extracting {
 
 			// Huh... no StringBuilder.Trim()
 			// Trim beginning and trailing ' ','.'
-			while (sanitized.Length > 0) {// TrimStart
+			while (sanitized.Length > 0) { // TrimStart
 				char c = sanitized[0];
 				if (c != ' ' && c != '.')
 					break;
