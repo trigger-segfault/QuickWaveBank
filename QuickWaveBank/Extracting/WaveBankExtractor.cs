@@ -464,7 +464,7 @@ namespace QuickWaveBank.Extracting {
 		//  A) Put very dangerous characters in their filenames
 		//  B) Rename some random binary file to "QuickWaveBank_TrackNames.txt", (the horror!)
 		private static string SanitizeFileName(string s, string replaceCharsWith) {
-			StringBuilder sanitized = new StringBuilder();
+			StringBuilder sanitized = new StringBuilder(s);
 			SanitizeFileName(sanitized, replaceCharsWith);
 			return sanitized.ToString();
 		}
